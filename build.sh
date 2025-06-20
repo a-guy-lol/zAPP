@@ -1,3 +1,4 @@
+# build.sh v2
 #!/bin/bash
 
 APP_NAME="Zexon"
