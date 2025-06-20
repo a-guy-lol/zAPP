@@ -6,6 +6,7 @@ const fetch = require('node-fetch');
 const { spawn } = require('child_process');
 
 let mainWindow;
+let isQuitting = false;
 
 const DATA_DIR = path.join(os.homedir(), 'Documents', 'zexonData');
 const DATA_FILE = path.join(DATA_DIR, 'zexon_app_data.json');
@@ -47,18 +48,18 @@ ipcMain.on('minimize-window', () => {
 });
 
 ipcMain.on('close-window', () => {
-  if (mainWindow) mainWindow.close();
+  app.quit();
 });
 
 ipcMain.on('open-signup-link', () => {
   shell.openExternal('https://api.zexon.workers.dev/');
 });
 
-ipcMain.handle('login', async (event, { username, password }) => 
+ipcMain.handle('login', async (event, credentials) => {
+    const { username, password } = credentials;
     console.log(`Login attempt for user: ${username}`);
     return { success: true, message: 'Login successful!' };
 });
-
 
 ipcMain.handle('execute-script', async (event, scriptContent) => {
   const START_PORT = 6969;
@@ -78,6 +79,7 @@ ipcMain.handle('execute-script', async (event, scriptContent) => {
   if (!serverPort) {
       return { success: false, message: `Could not locate HTTP server on ports ${START_PORT}-${END_PORT}.` };
   }
+
   try {
       const postUrl = `http://127.0.0.1:${serverPort}/execute`;
       const response = await fetch(postUrl, {
@@ -137,10 +139,26 @@ ipcMain.handle('save-state', async (event, dataToSave) => {
     }
 });
 
+app.on('before-quit', (event) => {
+    if (isQuitting) {
+        return; 
+    }
+    event.preventDefault();
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        ipcMain.once('final-save-complete', () => {
+            isQuitting = true;
+            app.quit();
+        });
+        mainWindow.webContents.send('request-final-save');
+    } else {
+        isQuitting = true;
+        app.quit();
+    }
+});
 
 app.whenReady().then(() => {
   createWindow();
-
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
@@ -149,7 +167,5 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  app.quit();
 });
