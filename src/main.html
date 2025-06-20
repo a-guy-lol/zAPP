@@ -51,14 +51,15 @@
         .main-nav-btn { appearance: none; -webkit-appearance: none; padding: 0.5rem 1rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; color: var(--text-muted); border-radius: 6px; border: 1px solid transparent; background-color: transparent; }
         .main-nav-btn.active { color: var(--text-main); background-color: var(--bg-secondary); border-color: var(--border-color); }
         .main-nav-btn:not(.active):hover { background-color: #252525; }
-        .main-nav-btn:focus { outline: none; } 
-        #scripts-pane { flex-direction: row; }
+        .main-nav-btn:focus { outline: none; }
+
+        #scripts-pane { flex-direction: row; } 
 
         .content-pane { flex-grow: 1; display: flex; overflow: hidden; }
-      
+        
         #script-tab-bar {
             display: flex;
-            flex-direction: column; 
+            flex-direction: column;
             padding: 0.5rem;
             background-color: var(--bg-main);
             flex-shrink: 0;
@@ -77,11 +78,11 @@
             border: 1px solid var(--border-color);
             position: relative;
             color: var(--text-muted);
-            border-radius: 6px; 
+            border-radius: 6px;
             transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
             width: 100%;
             box-sizing: border-box;
-            border-left: 3px solid transparent; 
+            border-left: 3px solid transparent;
         }
         .script-tab:hover { background-color: #252525; color: var(--text-main); }
         .script-tab.active {
@@ -107,7 +108,7 @@
             text-align: center;
             width: 100%;
             box-sizing: border-box;
-            margin-top: auto; 
+            margin-top: auto;
         }
         #new-tab-btn:hover { background-color: #252525; border-style: solid; }
 
@@ -268,7 +269,6 @@
         const renameModalSaveBtn = document.getElementById('rename-modal-save');
         const renameModalCancelBtn = document.getElementById('rename-modal-cancel');
 
-
         let TABS_DATA = [];
         let activeTabId = null;
         let activeContextMenuTabId = null;
@@ -276,9 +276,14 @@
         const editors = {};
         let autoSaveInterval = null;
 
-        // =================================================================================
-        // INITIALIZATION & AUTH
-        // =================================================================================
+        async function saveState() {
+            if (TABS_DATA) {
+                const result = await window.electronAPI.saveState(TABS_DATA);
+                if (!result.success) {
+                   showNotification(`Auto-save failed: ${result.error}`, 'error');
+                }
+            }
+        }
 
         function initApp() {
             if (localStorage.getItem('zexonSession') === 'loggedIn') {
@@ -311,8 +316,12 @@
                 if (e.key === 'Escape') renameModalOverlay.classList.add('hidden');
             });
 
-
             autoSaveToggle.addEventListener('change', setupAutoSave);
+
+            window.electronAPI.onRequestFinalSave(async () => {
+                await saveState();
+                window.electronAPI.notifyFinalSaveComplete();
+            });
         }
 
         function showLogin() {
@@ -324,7 +333,7 @@
             loginView.classList.add('hidden');
             mainAppView.classList.remove('hidden');
             
-            await loadState(); 
+            await loadState();
             checkConnection();
             setInterval(checkConnection, 3000);
             setupAutoSave();
@@ -351,10 +360,6 @@
             showLogin();
         }
 
-        // =================================================================================
-        // MAIN TABS (SCRIPTS/SETTINGS)
-        // =================================================================================
-
         function switchMainView(viewName) {
             if (viewName === 'scripts') {
                 scriptsPane.classList.remove('hidden');
@@ -371,10 +376,6 @@
             }
         }
 
-        // =================================================================================
-        // DATA (SAVE/LOAD)
-        // =================================================================================
-
         async function loadState() {
             const result = await window.electronAPI.loadState();
             if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
@@ -389,26 +390,13 @@
                  activeTabId = null;
             }
         }
-
-        async function saveState() {
-            if (TABS_DATA) {
-                const result = await window.electronAPI.saveState(TABS_DATA);
-                if (!result.success) {
-                   showNotification(`Auto-save failed: ${result.error}`, 'error');
-                }
-            }
-        }
         
         function setupAutoSave() {
             if (autoSaveInterval) clearInterval(autoSaveInterval);
             if (autoSaveToggle.checked) {
-                autoSaveInterval = setInterval(saveState, 15000);
+                autoSaveInterval = setInterval(saveState, 30000);
             }
         }
-
-        // =================================================================================
-        // SCRIPT TAB & EDITOR MANAGEMENT
-        // =================================================================================
 
         function renderAllTabs() {
             Array.from(scriptTabBar.querySelectorAll('.script-tab')).forEach(t => t.remove());
@@ -552,10 +540,6 @@
             saveState();
         }
 
-        // =================================================================================
-        // CONTEXT MENU
-        // =================================================================================
-
         function showContextMenu(event, tabId) {
             activeContextMenuTabId = tabId;
             contextMenu.style.top = `${event.clientY}px`;
@@ -592,11 +576,6 @@
             }
             renameModalOverlay.classList.add('hidden');
         }
-
-
-        // =================================================================================
-        // UTILS & BACKEND COMMUNICATION
-        // =================================================================================
 
         function showNotification(message, type = 'info') {
             notificationBanner.textContent = message;
