@@ -1,4 +1,3 @@
-# build.sh v2
 #!/bin/bash
 
 APP_NAME="Zexon"
@@ -7,145 +6,173 @@ GITHUB_USER="a-guy-lol"
 GITHUB_REPO="zAPP"
 INSTALL_DIR="/Applications"
 
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-PINK='\033[0;35m'
-YELLOW='\033[1;33m'
+BOLD='\033[1m'
+DIM='\033[2m'
+WHITE='\033[1;37m'
+GRAY='\033[0;37m'
+DARK_GRAY='\033[1;30m'
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+CYAN='\033[1;36m'
 NC='\033[0m'
 
-echo -e "${PINK}"
-cat << "EOF"
- _____                       _____ 
-( ___ )---------------------( ___ )
- |   |                       |   | 
- |   | __  ___      __       |   | 
- |   |  / |__  \_/ /  \ |\ | |   | 
- |   | /_ |___ / \ \__/ | \| |   | 
- |___|                       |___| 
-(_____)---------------------(_____)
-EOF
-echo -e "              Installer & Builder${NC}"
+clear
+
+echo -e "${WHITE}"
+echo "                    _____                       _____ "
+echo "                   ( ___ )---------------------( ___ )"
+echo "                    |   |                       |   | "
+echo "                    |   | __  ___      __       |   | "
+echo "                    |   |  / |__  \_/ /  \ |\ | |   | "
+echo "                    |   | /_ |___ / \ \__/ | \| |   | "
+echo "                    |___|                       |___| "
+echo "                   (_____)---------------------(_____)${NC}"
 echo
-
-echo -e "${YELLOW}Starting system checks...${NC}"
-
-if [[ "$(uname)" != "Darwin" ]]; then
-    echo -e "${RED}Platform issue detected. This script is for macOS only. Cannot install.${NC}"
+echo -e "                        ${BOLD}${WHITE}ZexonUI Packager${NC}"
+echo
+echo -e "${DIM}                     ────────────────────────────${NC}"
+echo
+echo -e "${BOLD}${WHITE}About this app before we continue.${NC}"
+echo -e "  ${GRAY}A clean and modern desktop app for intel/arm64.${NC}"
+echo -e "  ${GRAY}This app connects to Zexon's API to provide you are services.${NC}"
+echo -e "  ${GRAY}This installer will download, build, and install Zexon${NC}"
+echo -e "  ${GRAY}directly to your Applications folder.${NC}"
+echo
+echo -e "${DIM}By continuing, you agree to download and install this software with the following features?${NC}"
+echo
+read -p "Continue with installation? (y/n): " agree
+if [[ "$agree" != [yY] ]]; then
+    echo -e "${RED}Installation cancelled${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ macOS detected.${NC}"
+echo
+echo -e "${DIM}                     ────────────────────────────${NC}"
+echo
+
+echo -e "${BOLD}${WHITE}▸ System Check${NC}"
+
+if [[ "$(uname)" != "Darwin" ]]; then
+    echo -e "  ${RED}✗ macOS required${NC}"
+    exit 1
+fi
+echo -e "  ${GREEN}✓ macOS${NC}"
 
 if ! command -v brew &> /dev/null; then
-    read -p "Homebrew is not installed, which is required. Install it now? (Y/N): " confirm
-    if [[ "$confirm" == [yY] || "$confirm" == [yY][eE][sS] ]]; then
-        echo -e "${PINK}Installing Homebrew...${NC}"
+    echo -e "  ${CYAN}? Homebrew missing${NC}"
+    read -p "  Install Homebrew? (y/n): " confirm
+    if [[ "$confirm" == [yY] ]]; then
+        echo -e "  ${BLUE}↻ Installing Homebrew${NC}"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         if [ $? -ne 0 ]; then
-            echo -e "${RED}Homebrew installation failed.${NC}"
+            echo -e "  ${RED}✗ Homebrew failed${NC}"
             exit 1
         fi
     else
-        echo -e "${RED}Installation cancelled. Homebrew is required to proceed.${NC}"
+        echo -e "  ${RED}✗ Installation cancelled${NC}"
         exit 1
     fi
 fi
-echo -e "${GREEN}✓ Homebrew detected.${NC}"
+echo -e "  ${GREEN}✓ Homebrew${NC}"
 
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-    echo -e "${YELLOW}Node.js not found. Installing with Homebrew...${NC}"
+    echo -e "  ${BLUE}↻ Installing Node.js${NC}"
     brew install node
     if ! command -v node &> /dev/null; then
-        echo -e "${RED}Node.js installation failed.${NC}"
+        echo -e "  ${RED}✗ Node.js failed${NC}"
         exit 1
     fi
 fi
-echo -e "${GREEN}✓ Node.js and npm detected.${NC}"
+echo -e "  ${GREEN}✓ Node.js${NC}"
 
 if ! command -v git &> /dev/null; then
-    echo -e "${RED}Git is not installed. Please install it with 'brew install git'.${NC}"
+    echo -e "  ${RED}✗ Git missing${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Git detected.${NC}"
-echo
+echo -e "  ${GREEN}✓ Git${NC}"
 
-echo -e "${YELLOW}Setting up project files...${NC}"
+echo
+echo -e "${BOLD}${WHITE}▸ Project Setup${NC}"
+
 if [ ! -d "$GITHUB_REPO" ]; then
-    echo -e "${PINK}Downloading project...${NC}"
+    echo -e "  ${BLUE}↻ Downloading${NC}"
     git clone "https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
     if [ $? -ne 0 ]; then
-        echo -e "${RED}Download failed. Check the GitHub username and repo name.${NC}"
+        echo -e "  ${RED}✗ Download failed${NC}"
         exit 1
     fi
     cd "$GITHUB_REPO"
 else
-    echo -e "${PINK}Project folder found. Updating...${NC}"
+    echo -e "  ${BLUE}↻ Updating${NC}"
     cd "$GITHUB_REPO"
     git pull
 fi
 
-echo -e "${PINK}Installing dependencies...${NC}"
+echo -e "  ${BLUE}↻ Installing dependencies${NC}"
 npm install
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Dependency installation failed.${NC}"
+    echo -e "  ${RED}✗ Dependencies failed${NC}"
     exit 1
 fi
-echo
 
-echo -e "${YELLOW}Building the application...${NC}"
+echo
+echo -e "${BOLD}${WHITE}▸ Building${NC}"
 npm run build
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Application build failed.${NC}"
+    echo -e "  ${RED}✗ Build failed${NC}"
     exit 1
 fi
-echo
 
-echo -e "${YELLOW}Installing Zexon...${NC}"
-# Use find to locate the correct DMG file, regardless of architecture
+echo
+echo -e "${BOLD}${WHITE}▸ Installation${NC}"
+
 DMG_PATH=$(find dist -name "*.dmg" -print -quit)
 
 if [ -z "$DMG_PATH" ]; then
-    echo -e "${RED}Built app file (.dmg) not found in 'dist' folder.${NC}"
+    echo -e "  ${RED}✗ No installer found${NC}"
     exit 1
 fi
-echo -e "${GREEN}✓ Found installer: ${DMG_PATH}${NC}"
+echo -e "  ${GREEN}✓ Found installer${NC}"
 
-echo -e "${PINK}Administrator access is required to install.${NC}"
+echo -e "  ${CYAN}? Admin access required${NC}"
 if ! sudo -v; then
-    echo -e "${RED}Failed to get administrator privileges.${NC}"
+    echo -e "  ${RED}✗ Admin access denied${NC}"
     exit 1
 fi
 
 if pgrep -f "${APP_NAME}" > /dev/null; then
-    echo -e "${YELLOW}Closing the running app...${NC}"
+    echo -e "  ${BLUE}↻ Closing running app${NC}"
     sudo killall "${APP_NAME}" 2>/dev/null
     sleep 2
 fi
 
 if [ -d "${INSTALL_DIR}/${APP_NAME}.app" ]; then
-    echo -e "${YELLOW}Removing old version...${NC}"
+    echo -e "  ${BLUE}↻ Removing old version${NC}"
     sudo rm -rf "${INSTALL_DIR}/${APP_NAME}.app"
 fi
 
-echo -e "${PINK}Copying app to Applications folder...${NC}"
+echo -e "  ${BLUE}↻ Installing to Applications${NC}"
 MOUNT_POINT=$(hdiutil attach -nobrowse -noautoopen "$DMG_PATH" | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
 if [ -z "$MOUNT_POINT" ]; then
-    echo -e "${RED}Failed to open the installer file.${NC}"
+    echo -e "  ${RED}✗ Failed to mount installer${NC}"
     exit 1
 fi
 
 sudo ditto -rsrc "${MOUNT_POINT}/${APP_NAME}.app" "${INSTALL_DIR}/${APP_NAME}.app"
 if [ $? -ne 0 ]; then
-    echo -e "${RED}Failed to copy app to Applications.${NC}"
+    echo -e "  ${RED}✗ Installation failed${NC}"
     hdiutil detach "$MOUNT_POINT" -force >/dev/null
     exit 1
 fi
 
 hdiutil detach "$MOUNT_POINT" -force >/dev/null
-echo
 
-echo -e "${GREEN}✓ Zexon was installed successfully!${NC}"
-echo -e "${PINK}Launching Zexon...${NC}"
+echo
+echo -e "${BOLD}${GREEN}✓ Installation Complete${NC}"
+echo -e "  ${BLUE}↻ Launching Zexon${NC}"
 open -a "${INSTALL_DIR}/${APP_NAME}.app"
 
-echo -e "${GREEN}Installation complete!${NC}"
-
+echo
+echo -e "${DIM}                     ────────────────────────────${NC}"
+echo -e "                         ${BOLD}${WHITE}Ready to use!${NC}"
+echo
