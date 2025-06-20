@@ -9,7 +9,7 @@ Open the Terminal app on your Mac.
 
 Copy and paste this one command into the terminal and press Enter:
 ```
-curl -sL "[https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh](https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh)" | bash
+curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh" | bash
 ```
 That's it! The script will automatically install everything you need. The Zexon app will be in your /Applications folder when it's done.
 
