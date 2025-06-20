@@ -17,14 +17,14 @@ readonly STYLE_BOLD='\033[1m'
 readonly STYLE_DIM='\033[2m'
 readonly STYLE_UNDERLINE='\033[4m'
 
-readonly COLOR_PRIMARY='\033[1;37m'     # Bold white (main text)
-readonly COLOR_SUCCESS='\033[1;37m'     # Bold white (success)
-readonly COLOR_WARNING='\033[1;37m'     # Bold white (warning)
-readonly COLOR_ERROR='\033[1;37m'       # Bold white (error)
-readonly COLOR_INFO='\033[1;37m'        # Bold white (info)
-readonly COLOR_ACCENT='\033[1;37m'      # Bold white (accent)
-readonly COLOR_TEXT='\033[0;37m'        # Regular white
-readonly COLOR_MUTED='\033[2;37m'       # Dim white
+readonly COLOR_PRIMARY='\033[1;37m'       # Bold white (main text)
+readonly COLOR_SUCCESS='\033[1;37m'       # Bold white (success)
+readonly COLOR_WARNING='\033[1;37m'       # Bold white (warning)
+readonly COLOR_ERROR='\033[1;37m'         # Bold white (error)
+readonly COLOR_INFO='\033[1;37m'          # Bold white (info)
+readonly COLOR_ACCENT='\033[1;37m'        # Bold white (accent)
+readonly COLOR_TEXT='\033[0;37m'          # Regular white
+readonly COLOR_MUTED='\033[2;37m'         # Dim white
 
 # =============================================================================
 # INTERFACE ELEMENTS
@@ -33,19 +33,19 @@ display_banner() {
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
     echo "    ╔══════════════════════════════════════════════════════════╗"
     echo "    ║                                                          ║"
-    echo "    ║    ███████╗███████╗██╗  ██╗ ██████╗ ███╗   ██╗           ║"
-    echo "    ║    ╚══███╔╝██╔════╝╚██╗██╔╝██╔═══██╗████╗  ██║           ║"
-    echo "    ║      ███╔╝ █████╗   ╚███╔╝ ██║   ██║██╔██╗ ██║           ║"
-    echo "    ║     ███╔╝  ██╔══╝   ██╔██╗ ██║   ██║██║╚██╗██║           ║"
-    echo "    ║    ███████╗███████╗██╔╝ ██╗╚██████╔╝██║ ╚████║           ║"
-    echo "    ║    ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝           ║"
+    echo "    ║    ███████╗███████╗██╗  ██╗ ██████╗ ███╗    ██╗          ║"
+    echo "    ║    ╚══███╔╝██╔════╝╚██╗██╔╝██╔═══██╗████╗  ██║          ║"
+    echo "    ║      ███╔╝ █████╗    ╚███╔╝ ██║  ██║██╔██╗ ██║          ║"
+    echo "    ║    ███╔╝  ██╔══╝    ██╔██╗ ██║  ██║██║╚██╗██║          ║"
+    echo "    ║    ███████╗███████╗██╔╝ ██╗╚██████╔╝██║ ╚████║          ║"
+    echo "    ║    ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝          ║"
     echo "    ║                                                          ║"
-    echo "    ║                    Desktop Application Installer         ║"
+    echo "    ║                    Desktop Application Installer        ║"
     echo "    ║                                                          ║"
     echo "    ╚══════════════════════════════════════════════════════════╝"
     echo -e "${STYLE_RESET}"
     echo
-    echo -e "${COLOR_MUTED}${STYLE_DIM}                 Modern • Clean • Efficient${STYLE_RESET}"
+    echo -e "${COLOR_MUTED}${STYLE_DIM}              Modern • Clean • Efficient${STYLE_RESET}"
     echo
 }
 
@@ -87,17 +87,17 @@ echo
 display_separator
 echo
 
-# Handle piped input - exit if not interactive
-if [ ! -t 0 ]; then
-    echo "This installer requires interactive input and cannot be run via pipe."
-    echo "Please download and run the script directly:"
-    echo "  curl -sL \"https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh\" -o install.sh"
-    echo "  chmod +x install.sh"
-    echo "  ./install.sh"
-    exit 1
-fi
+# --- START MODIFICATION FOR INTERACTIVE EXECUTION VIA /dev/tty ---
+# Input for 'read' commands is now explicitly redirected from /dev/tty (your terminal).
+# This allows for interactive prompts even when the script is piped.
+# IMPORTANT: 'sudo' commands will still require your password directly in the terminal.
+display_info "Attempting interactive input via your terminal (/dev/tty)."
+display_warning "You will still need to enter your password for 'sudo' commands."
+echo
+# --- END MODIFICATION ---
 
-read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
+# Consent to continue installation
+read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent < /dev/tty
 if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
     display_error "Installation aborted by user"
     exit 1
@@ -119,7 +119,7 @@ display_success "macOS detected"
 # Homebrew verification
 if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
-    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
+    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install < /dev/tty
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
         display_info "Installing Homebrew package manager"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -191,7 +191,7 @@ display_section_header "System Installation"
 # Existing installation check
 if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     display_warning "Existing installation detected"
-    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
+    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice < /dev/tty
     if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
         display_error "Installation cancelled - existing version preserved"
         cd ..
@@ -212,7 +212,7 @@ display_success "Installation package located"
 # Administrative privileges
 display_warning "Administrative privileges required for system installation"
 if ! sudo -v; then
-    display_error "Administrative access denied"
+    display_error "Administrative access denied (sudo password required)"
     exit 1
 fi
 
@@ -253,5 +253,4 @@ open -a "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
 
 echo
 display_separator
-echo -e "${COLOR_PRIMARY}${STYLE_BOLD}                        Ready for Use!${STYLE_RESET}"
-echo
+echo -e "${COLOR_PRIMARY}${STYLE_BOLD}    Ready for Use!${STYLE_RESET}"
