@@ -89,7 +89,7 @@ echo
 display_separator
 echo
 
-display_info "Attempting interactive input via your terminal (/dev/tty)."
+display_info " "
 display_warning "You will still need to enter your password for 'sudo' commands."
 echo
 
@@ -195,8 +195,8 @@ display_section_header "System Installation"
 
 # Existing installation check
 if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
-    display_warning "Existing installation detected"
-    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice < /dev/tty
+    display_warning "Existing build detected"
+    read -p "$(echo -e "${COLOR_ACCENT}  Reinstall/Update latest build? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice < /dev/tty
     if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
         display_error "Installation cancelled - existing version preserved"
         cd ..
