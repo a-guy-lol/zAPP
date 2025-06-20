@@ -10,27 +10,26 @@ readonly SOURCE_REPOSITORY="zAPP"
 readonly TARGET_DIRECTORY="/Applications"
 
 # =============================================================================
-# TERMINAL STYLING
+# TERMINAL STYLING (Dark Mode Optimized B&W)
 # =============================================================================
 readonly STYLE_RESET='\033[0m'
 readonly STYLE_BOLD='\033[1m'
 readonly STYLE_DIM='\033[2m'
 readonly STYLE_UNDERLINE='\033[4m'
 
-readonly COLOR_PRIMARY='\033[1;34m'     # Bold blue
-readonly COLOR_SUCCESS='\033[1;32m'     # Bold green
-readonly COLOR_WARNING='\033[1;33m'     # Bold yellow
-readonly COLOR_ERROR='\033[1;31m'       # Bold red
-readonly COLOR_INFO='\033[1;36m'        # Bold cyan
-readonly COLOR_ACCENT='\033[1;35m'      # Bold magenta
-readonly COLOR_TEXT='\033[1;37m'        # Bold white
-readonly COLOR_MUTED='\033[0;37m'       # Gray
+readonly COLOR_PRIMARY='\033[1;37m'     # Bold white (main text)
+readonly COLOR_SUCCESS='\033[1;37m'     # Bold white (success)
+readonly COLOR_WARNING='\033[1;37m'     # Bold white (warning)
+readonly COLOR_ERROR='\033[1;37m'       # Bold white (error)
+readonly COLOR_INFO='\033[1;37m'        # Bold white (info)
+readonly COLOR_ACCENT='\033[1;37m'      # Bold white (accent)
+readonly COLOR_TEXT='\033[0;37m'        # Regular white
+readonly COLOR_MUTED='\033[2;37m'       # Dim white
 
 # =============================================================================
 # INTERFACE ELEMENTS
 # =============================================================================
 display_banner() {
-    clear
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
     echo "    ╔══════════════════════════════════════════════════════════╗"
     echo "    ║                                                          ║"
@@ -88,16 +87,20 @@ echo
 display_separator
 echo
 
-if [ -t 0 ]; then
-    read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
-    if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
-        display_error "Installation aborted by user"
-        exit 1
-    fi
-else
-    echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
-    echo -e "${COLOR_INFO}  → Auto-continuing installation (piped input detected)${STYLE_RESET}"
-    user_consent="y"
+# Handle piped input - exit if not interactive
+if [ ! -t 0 ]; then
+    echo "This installer requires interactive input and cannot be run via pipe."
+    echo "Please download and run the script directly:"
+    echo "  curl -sL \"https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh\" -o install.sh"
+    echo "  chmod +x install.sh"
+    echo "  ./install.sh"
+    exit 1
+fi
+
+read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
+if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
+    display_error "Installation aborted by user"
+    exit 1
 fi
 
 echo
@@ -116,12 +119,7 @@ display_success "macOS detected"
 # Homebrew verification
 if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
-    if [ -t 0 ]; then
-        read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
-    else
-        echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
-        homebrew_install="y"
-    fi
+    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
         display_info "Installing Homebrew package manager"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -193,12 +191,7 @@ display_section_header "System Installation"
 # Existing installation check
 if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     display_warning "Existing installation detected"
-    if [ -t 0 ]; then
-        read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
-    else
-        echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
-        update_choice="y"
-    fi
+    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
     if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
         display_error "Installation cancelled - existing version preserved"
         cd ..
