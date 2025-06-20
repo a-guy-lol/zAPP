@@ -1,178 +1,248 @@
 #!/bin/bash
 
-APP_NAME="Zexon"
-APP_VERSION="1.0.0"
-GITHUB_USER="a-guy-lol"
-GITHUB_REPO="zAPP"
-INSTALL_DIR="/Applications"
+# =============================================================================
+# ZEXON DESKTOP INSTALLER
+# =============================================================================
+readonly APPLICATION_NAME="Zexon"
+readonly APPLICATION_VERSION="1.0.0"
+readonly SOURCE_USER="a-guy-lol"
+readonly SOURCE_REPOSITORY="zAPP"
+readonly TARGET_DIRECTORY="/Applications"
 
-BOLD='\033[1m'
-DIM='\033[2m'
-WHITE='\033[1;37m'
-GRAY='\033[0;37m'
-DARK_GRAY='\033[1;30m'
-RED='\033[1;31m'
-GREEN='\033[1;32m'
-BLUE='\033[1;34m'
-CYAN='\033[1;36m'
-NC='\033[0m'
+# =============================================================================
+# TERMINAL STYLING
+# =============================================================================
+readonly STYLE_RESET='\e[0m'
+readonly STYLE_BOLD='\e[1m'
+readonly STYLE_DIM='\e[2m'
+readonly STYLE_UNDERLINE='\e[4m'
 
-clear
+readonly COLOR_PRIMARY='\e[38;5;39m'    # Bright blue
+readonly COLOR_SUCCESS='\e[38;5;46m'    # Bright green
+readonly COLOR_WARNING='\e[38;5;226m'   # Bright yellow
+readonly COLOR_ERROR='\e[38;5;196m'     # Bright red
+readonly COLOR_INFO='\e[38;5;147m'      # Light purple
+readonly COLOR_ACCENT='\e[38;5;51m'     # Cyan
+readonly COLOR_TEXT='\e[97m'            # Bright white
+readonly COLOR_MUTED='\e[90m'           # Dark gray
 
-echo -e "${WHITE}"
-echo "                    _____                       _____ "
-echo "                   ( ___ )---------------------( ___ )"
-echo "                    |   |                       |   | "
-echo "                    |   | __  ___      __       |   | "
-echo "                    |   |  / |__  \_/ /  \ |\ | |   | "
-echo "                    |   | /_ |___ / \ \__/ | \| |   | "
-echo "                    |___|                       |___| "
-echo "                   (_____)---------------------(_____)${NC}"
+# =============================================================================
+# INTERFACE ELEMENTS
+# =============================================================================
+display_banner() {
+    clear
+    echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
+    echo "    ╔══════════════════════════════════════════════════════════╗"
+    echo "    ║                                                          ║"
+    echo "    ║    ███████╗███████╗██╗  ██╗ ██████╗ ███╗   ██╗           ║"
+    echo "    ║    ╚══███╔╝██╔════╝╚██╗██╔╝██╔═══██╗████╗  ██║           ║"
+    echo "    ║      ███╔╝ █████╗   ╚███╔╝ ██║   ██║██╔██╗ ██║           ║"
+    echo "    ║     ███╔╝  ██╔══╝   ██╔██╗ ██║   ██║██║╚██╗██║           ║"
+    echo "    ║    ███████╗███████╗██╔╝ ██╗╚██████╔╝██║ ╚████║           ║"
+    echo "    ║    ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝           ║"
+    echo "    ║                                                          ║"
+    echo "    ║                    Desktop Application Installer         ║"
+    echo "    ║                                                          ║"
+    echo "    ╚══════════════════════════════════════════════════════════╝"
+    echo -e "${STYLE_RESET}"
+    echo
+    echo -e "${COLOR_MUTED}${STYLE_DIM}                 Modern • Clean • Efficient${STYLE_RESET}"
+    echo
+}
+
+display_section_header() {
+    echo -e "${COLOR_ACCENT}${STYLE_BOLD}┌─ $1 ${STYLE_RESET}"
+}
+
+display_success() {
+    echo -e "${COLOR_SUCCESS}  ✓ $1${STYLE_RESET}"
+}
+
+display_error() {
+    echo -e "${COLOR_ERROR}  ✗ $1${STYLE_RESET}"
+}
+
+display_info() {
+    echo -e "${COLOR_INFO}  → $1${STYLE_RESET}"
+}
+
+display_warning() {
+    echo -e "${COLOR_WARNING}  ⚠ $1${STYLE_RESET}"
+}
+
+display_separator() {
+    echo -e "${COLOR_MUTED}${STYLE_DIM}  ────────────────────────────────────────────────────────${STYLE_RESET}"
+}
+
+# =============================================================================
+# MAIN INSTALLATION PROCESS
+# =============================================================================
+
+display_banner
+
+echo -e "${COLOR_TEXT}${STYLE_BOLD}Application Overview${STYLE_RESET}"
+echo -e "${COLOR_MUTED}  Clean and modern desktop application for Intel/ARM64 architectures${STYLE_RESET}"
+echo -e "${COLOR_MUTED}  Connects to Zexon's API services for enhanced functionality${STYLE_RESET}"
+echo -e "${COLOR_MUTED}  Auto-downloads, builds, and installs to Applications folder${STYLE_RESET}"
 echo
-echo -e "                        ${BOLD}${WHITE}ZexonUI Packager${NC}"
+display_separator
 echo
-echo -e "${DIM}                     ────────────────────────────${NC}"
-echo
-echo -e "${BOLD}${WHITE}About this app before we continue.${NC}"
-echo -e "  ${GRAY}A clean and modern desktop app for intel/arm64.${NC}"
-echo -e "  ${GRAY}This app connects to Zexon's API to provide you are services.${NC}"
-echo -e "  ${GRAY}This installer will download, build, and install Zexon${NC}"
-echo -e "  ${GRAY}directly to your Applications folder.${NC}"
-echo
-echo -e "${DIM}By continuing, you agree to download and install this software with the following features?${NC}"
-echo
-read -p "Continue with installation? (y/n): " agree
-if [[ "$agree" != [yY] ]]; then
-    echo -e "${RED}Installation cancelled${NC}"
+
+read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
+if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
+    display_error "Installation aborted by user"
     exit 1
 fi
+
 echo
-echo -e "${DIM}                     ────────────────────────────${NC}"
+display_separator
 echo
 
-echo -e "${BOLD}${WHITE}▸ System Check${NC}"
+display_section_header "System Requirements Check"
 
+# macOS verification
 if [[ "$(uname)" != "Darwin" ]]; then
-    echo -e "  ${RED}✗ macOS required${NC}"
+    display_error "macOS required for this installation"
     exit 1
 fi
-echo -e "  ${GREEN}✓ macOS${NC}"
+display_success "macOS detected"
 
+# Homebrew verification
 if ! command -v brew &> /dev/null; then
-    echo -e "  ${CYAN}? Homebrew missing${NC}"
-    read -p "  Install Homebrew? (y/n): " confirm
-    if [[ "$confirm" == [yY] ]]; then
-        echo -e "  ${BLUE}↻ Installing Homebrew${NC}"
+    display_warning "Homebrew package manager not found"
+    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
+    if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
+        display_info "Installing Homebrew package manager"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
         if [ $? -ne 0 ]; then
-            echo -e "  ${RED}✗ Homebrew failed${NC}"
+            display_error "Homebrew installation failed"
             exit 1
         fi
     else
-        echo -e "  ${RED}✗ Installation cancelled${NC}"
+        display_error "Installation cancelled - Homebrew required"
         exit 1
     fi
 fi
-echo -e "  ${GREEN}✓ Homebrew${NC}"
+display_success "Homebrew package manager"
 
+# Node.js verification
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-    echo -e "  ${BLUE}↻ Installing Node.js${NC}"
+    display_info "Installing Node.js runtime environment"
     brew install node
     if ! command -v node &> /dev/null; then
-        echo -e "  ${RED}✗ Node.js failed${NC}"
+        display_error "Node.js installation failed"
         exit 1
     fi
 fi
-echo -e "  ${GREEN}✓ Node.js${NC}"
+display_success "Node.js runtime environment"
 
+# Git verification
 if ! command -v git &> /dev/null; then
-    echo -e "  ${RED}✗ Git missing${NC}"
+    display_error "Git version control system not found"
     exit 1
 fi
-echo -e "  ${GREEN}✓ Git${NC}"
+display_success "Git version control system"
 
 echo
-echo -e "${BOLD}${WHITE}▸ Project Setup${NC}"
+display_section_header "Project Configuration"
 
-if [ ! -d "$GITHUB_REPO" ]; then
-    echo -e "  ${BLUE}↻ Downloading${NC}"
-    git clone "https://github.com/${GITHUB_USER}/${GITHUB_REPO}.git"
+# Repository management
+if [ ! -d "$SOURCE_REPOSITORY" ]; then
+    display_info "Downloading source code from repository"
+    git clone "https://github.com/${SOURCE_USER}/${SOURCE_REPOSITORY}.git"
     if [ $? -ne 0 ]; then
-        echo -e "  ${RED}✗ Download failed${NC}"
+        display_error "Repository download failed"
         exit 1
     fi
-    cd "$GITHUB_REPO"
+    cd "$SOURCE_REPOSITORY"
 else
-    echo -e "  ${BLUE}↻ Updating${NC}"
-    cd "$GITHUB_REPO"
+    display_info "Updating existing source code"
+    cd "$SOURCE_REPOSITORY"
     git pull
 fi
 
-echo -e "  ${BLUE}↻ Installing dependencies${NC}"
+display_info "Installing project dependencies"
 npm install
 if [ $? -ne 0 ]; then
-    echo -e "  ${RED}✗ Dependencies failed${NC}"
+    display_error "Dependency installation failed"
     exit 1
 fi
 
 echo
-echo -e "${BOLD}${WHITE}▸ Building${NC}"
+display_section_header "Application Build Process"
 npm run build
 if [ $? -ne 0 ]; then
-    echo -e "  ${RED}✗ Build failed${NC}"
+    display_error "Application build failed"
     exit 1
 fi
 
 echo
-echo -e "${BOLD}${WHITE}▸ Installation${NC}"
+display_section_header "System Installation"
 
-DMG_PATH=$(find dist -name "*.dmg" -print -quit)
+# Existing installation check
+if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
+    display_warning "Existing installation detected"
+    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
+    if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
+        display_error "Installation cancelled - existing version preserved"
+        cd ..
+        rm -rf "$SOURCE_REPOSITORY"
+        exit 0
+    fi
+fi
 
-if [ -z "$DMG_PATH" ]; then
-    echo -e "  ${RED}✗ No installer found${NC}"
+# Locate installer package
+INSTALLER_PACKAGE=$(find dist -name "*.dmg" -print -quit)
+
+if [ -z "$INSTALLER_PACKAGE" ]; then
+    display_error "Installation package not found in build output"
     exit 1
 fi
-echo -e "  ${GREEN}✓ Found installer${NC}"
+display_success "Installation package located"
 
-echo -e "  ${CYAN}? Admin access required${NC}"
+# Administrative privileges
+display_warning "Administrative privileges required for system installation"
 if ! sudo -v; then
-    echo -e "  ${RED}✗ Admin access denied${NC}"
+    display_error "Administrative access denied"
     exit 1
 fi
 
-if pgrep -f "${APP_NAME}" > /dev/null; then
-    echo -e "  ${BLUE}↻ Closing running app${NC}"
-    sudo killall "${APP_NAME}" 2>/dev/null
+# Close running application
+if pgrep -f "${APPLICATION_NAME}" > /dev/null; then
+    display_info "Terminating running application instances"
+    sudo killall "${APPLICATION_NAME}" 2>/dev/null
     sleep 2
 fi
 
-if [ -d "${INSTALL_DIR}/${APP_NAME}.app" ]; then
-    echo -e "  ${BLUE}↻ Removing old version${NC}"
-    sudo rm -rf "${INSTALL_DIR}/${APP_NAME}.app"
+# Remove existing installation
+if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
+    display_info "Removing previous installation"
+    sudo rm -rf "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
 fi
 
-echo -e "  ${BLUE}↻ Installing to Applications${NC}"
-MOUNT_POINT=$(hdiutil attach -nobrowse -noautoopen "$DMG_PATH" | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
-if [ -z "$MOUNT_POINT" ]; then
-    echo -e "  ${RED}✗ Failed to mount installer${NC}"
+# Install new version
+display_info "Installing application to system directory"
+VOLUME_MOUNT=$(hdiutil attach -nobrowse -noautoopen "$INSTALLER_PACKAGE" | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
+if [ -z "$VOLUME_MOUNT" ]; then
+    display_error "Failed to mount installation package"
     exit 1
 fi
 
-sudo ditto -rsrc "${MOUNT_POINT}/${APP_NAME}.app" "${INSTALL_DIR}/${APP_NAME}.app"
+sudo ditto -rsrc "${VOLUME_MOUNT}/${APPLICATION_NAME}.app" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
 if [ $? -ne 0 ]; then
-    echo -e "  ${RED}✗ Installation failed${NC}"
-    hdiutil detach "$MOUNT_POINT" -force >/dev/null
+    display_error "Application installation failed"
+    hdiutil detach "$VOLUME_MOUNT" -force >/dev/null
     exit 1
 fi
 
-hdiutil detach "$MOUNT_POINT" -force >/dev/null
+hdiutil detach "$VOLUME_MOUNT" -force >/dev/null
 
 echo
-echo -e "${BOLD}${GREEN}✓ Installation Complete${NC}"
-echo -e "  ${BLUE}↻ Launching Zexon${NC}"
-open -a "${INSTALL_DIR}/${APP_NAME}.app"
+echo -e "${COLOR_SUCCESS}${STYLE_BOLD}✓ Installation Successfully Completed${STYLE_RESET}"
+display_info "Launching ${APPLICATION_NAME} application"
+open -a "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
 
 echo
-echo -e "${DIM}                     ────────────────────────────${NC}"
-echo -e "                         ${BOLD}${WHITE}Ready to use!${NC}"
+display_separator
+echo -e "${COLOR_PRIMARY}${STYLE_BOLD}                        Ready for Use!${STYLE_RESET}"
 echo
