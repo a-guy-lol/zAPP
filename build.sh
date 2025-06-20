@@ -12,19 +12,19 @@ readonly TARGET_DIRECTORY="/Applications"
 # =============================================================================
 # TERMINAL STYLING
 # =============================================================================
-readonly STYLE_RESET='\e[0m'
-readonly STYLE_BOLD='\e[1m'
-readonly STYLE_DIM='\e[2m'
-readonly STYLE_UNDERLINE='\e[4m'
+readonly STYLE_RESET='\033[0m'
+readonly STYLE_BOLD='\033[1m'
+readonly STYLE_DIM='\033[2m'
+readonly STYLE_UNDERLINE='\033[4m'
 
-readonly COLOR_PRIMARY='\e[38;5;39m'    # Bright blue
-readonly COLOR_SUCCESS='\e[38;5;46m'    # Bright green
-readonly COLOR_WARNING='\e[38;5;226m'   # Bright yellow
-readonly COLOR_ERROR='\e[38;5;196m'     # Bright red
-readonly COLOR_INFO='\e[38;5;147m'      # Light purple
-readonly COLOR_ACCENT='\e[38;5;51m'     # Cyan
-readonly COLOR_TEXT='\e[97m'            # Bright white
-readonly COLOR_MUTED='\e[90m'           # Dark gray
+readonly COLOR_PRIMARY='\033[1;34m'     # Bold blue
+readonly COLOR_SUCCESS='\033[1;32m'     # Bold green
+readonly COLOR_WARNING='\033[1;33m'     # Bold yellow
+readonly COLOR_ERROR='\033[1;31m'       # Bold red
+readonly COLOR_INFO='\033[1;36m'        # Bold cyan
+readonly COLOR_ACCENT='\033[1;35m'      # Bold magenta
+readonly COLOR_TEXT='\033[1;37m'        # Bold white
+readonly COLOR_MUTED='\033[0;37m'       # Gray
 
 # =============================================================================
 # INTERFACE ELEMENTS
@@ -88,10 +88,16 @@ echo
 display_separator
 echo
 
-read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
-if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
-    display_error "Installation aborted by user"
-    exit 1
+if [ -t 0 ]; then
+    read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent
+    if [[ ! "$user_consent" =~ ^[Yy]$ ]]; then
+        display_error "Installation aborted by user"
+        exit 1
+    fi
+else
+    echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
+    echo -e "${COLOR_INFO}  → Auto-continuing installation (piped input detected)${STYLE_RESET}"
+    user_consent="y"
 fi
 
 echo
@@ -110,7 +116,12 @@ display_success "macOS detected"
 # Homebrew verification
 if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
-    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
+    if [ -t 0 ]; then
+        read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install
+    else
+        echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
+        homebrew_install="y"
+    fi
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
         display_info "Installing Homebrew package manager"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -182,7 +193,12 @@ display_section_header "System Installation"
 # Existing installation check
 if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     display_warning "Existing installation detected"
-    read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
+    if [ -t 0 ]; then
+        read -p "$(echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" update_choice
+    else
+        echo -e "${COLOR_ACCENT}  Update existing installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} y"
+        update_choice="y"
+    fi
     if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
         display_error "Installation cancelled - existing version preserved"
         cd ..
