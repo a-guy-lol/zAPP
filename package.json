@@ -1,0 +1,50 @@
+{
+  "name": "zexonui",
+  "version": "1.0.0",
+  "description": "luaU script editor",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "keywords": [
+    "editor",
+    "lua"
+  ],
+  "author": "mrWho263",
+  "license": "ISC",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.1",
+    "electron-builder": "^24.6.3"
+  },
+  "build": {
+    "appId": "com.zexon.ui",
+    "productName": "Zexon",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": "dmg",
+      "icon": "zexon-icon.icns",
+      "gatekeeperAssess": false,
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
+  }
+}
