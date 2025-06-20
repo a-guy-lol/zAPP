@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Zexon Editor</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+        :root { 
+            --bg-main: #111; 
+            --bg-secondary: #1a1a1a; 
+            --border-color: #2a2a2a; 
+            --text-main: #e5e7eb; 
+            --text-muted: #9ca3af; 
+            --accent-color: #3b82f6; 
+            --danger-color: #ef4444; 
+            --active-tab-bg: #2a2a2a; 
+            --active-tab-text: #ffffff;
+            --active-tab-border: #3b82f6;
+        }
+        .hidden { display: none !important; }
+        body { font-family: 'Inter', sans-serif; background-color: transparent; color: var(--text-main); margin: 0; height: 100vh; overflow: hidden; }
+        #app-wrapper { background-color: var(--bg-main); border: 1px solid #222; border-radius: 8px; height: 100%; display: flex; flex-direction: column; }
+        
+        #title-bar { display: flex; align-items: center; padding: 0 15px 0 20px; height: 55px; flex-shrink: 0; user-select: none; -webkit-app-region: drag; border-bottom: 1px solid #222;}
+        #title-bar-buttons { -webkit-app-region: no-drag; }
+        #title-label { font-size: 24px; font-weight: 900; background-image: linear-gradient(45deg, #ffffff, #b0b0b0); background-clip: text; -webkit-background-clip: text; color: transparent; }
+        .title-bar-btn { background-color: #333; border: 1px solid #555; color: #aaa; font-weight: bold; font-size: 12px; width: 25px; height: 25px; border-radius: 6px; padding-bottom: 2px; margin-left: 10px; cursor: pointer; }
+        .title-bar-btn:hover { background-color: #444; color: #fff; }
+
+        main { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+        footer { flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; }
+        
+        #login-view { display: flex; align-items: center; justify-content: center; height: 100%; padding: 2rem; }
+        #login-card { background-color: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 2.5rem; width: 100%; max-width: 380px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .form-input { background-color: #222; border: 1px solid #444; color: var(--text-main); padding: 0.75rem 1rem; border-radius: 0.375rem; width: 100%; box-sizing: border-box; }
+        .form-input:focus { background-color: #2a2a2a; border-color: var(--accent-color); box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); outline: none;}
+        .btn { padding: 0.5rem 1.5rem; border-radius: 0.375rem; font-weight: 600; color: white; border: 1px solid #444; cursor: pointer; transition: all 0.2s ease-in-out; background-image: linear-gradient(45deg, #333, #222); }
+        .btn-primary { background-image: linear-gradient(45deg, #333, #111); }
+        .btn-primary:hover, .btn:hover { box-shadow: 0 0 15px rgba(255, 255, 255, 0.1); transform: translateY(-2px); }
+        .btn-danger { background-image: linear-gradient(45deg, #581c22, #3d171a); border-color: #553333; }
+        .btn-danger:hover { box-shadow: 0 0 15px rgba(239, 68, 68, 0.2); transform: translateY(-2px); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        #login-view .links { font-size: 0.875rem; color: var(--text-muted); }
+        #login-view .links a { color: var(--accent-color); text-decoration: none; }
+        #login-view .links a:hover { text-decoration: underline; }
+
+        #main-app-view { flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        #main-nav { display: flex; padding: 0.5rem 1rem; background-color: #0d0d0d; flex-shrink: 0; user-select: none; gap: 0.5rem; border-bottom: 1px solid var(--border-color); }
+        .main-nav-btn { appearance: none; -webkit-appearance: none; padding: 0.5rem 1rem; font-weight: 500; font-size: 0.875rem; cursor: pointer; color: var(--text-muted); border-radius: 6px; border: 1px solid transparent; background-color: transparent; }
+        .main-nav-btn.active { color: var(--text-main); background-color: var(--bg-secondary); border-color: var(--border-color); }
+        .main-nav-btn:not(.active):hover { background-color: #252525; }
+        .main-nav-btn:focus { outline: none; } 
+        #scripts-pane { flex-direction: row; }
+
+        .content-pane { flex-grow: 1; display: flex; overflow: hidden; }
+      
+        #script-tab-bar {
+            display: flex;
+            flex-direction: column; 
+            padding: 0.5rem;
+            background-color: var(--bg-main);
+            flex-shrink: 0;
+            user-select: none;
+            gap: 0.5rem;
+            width: 200px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+        }
+        .script-tab {
+            display: flex;
+            align-items: center;
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            position: relative;
+            color: var(--text-muted);
+            border-radius: 6px; 
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+            width: 100%;
+            box-sizing: border-box;
+            border-left: 3px solid transparent; 
+        }
+        .script-tab:hover { background-color: #252525; color: var(--text-main); }
+        .script-tab.active {
+            background-color: var(--active-tab-bg);
+            font-weight: 600;
+            color: var(--active-tab-text);
+            border-color: var(--border-color);
+            border-left: 3px solid var(--active-tab-border);
+        }
+        .script-tab.dragging { opacity: 0.5; background-color: var(--accent-color); }
+        .tab-name { padding-right: 0.5rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+        .close-btn { margin-left: auto; background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; padding: 0 0.25rem; line-height: 1; flex-shrink: 0; opacity: 0.7; }
+        .close-btn:hover { opacity: 1; }
+        #new-tab-btn {
+            padding: 0.6rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            background-color: transparent;
+            border: 1px dashed var(--border-color);
+            color: var(--text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+            margin-top: auto; 
+        }
+        #new-tab-btn:hover { background-color: #252525; border-style: solid; }
+
+        #editor-area { flex-grow: 1; position: relative; }
+        .editor-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        #settings-pane { padding: 2rem; overflow-y: auto; flex-direction: column; gap: 1rem; }
+        .setting-category { font-size: 1.5rem; font-weight: 700; color: var(--text-main); padding-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); margin-bottom: 1rem; }
+        .setting-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); }
+        .setting-item-label h3 { font-weight: 600; margin: 0 0 0.25rem 0; }
+        .setting-item-label p { font-size: 0.875rem; color: var(--text-muted); margin: 0; }
+        .toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-color); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .status-indicator { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; transition: background-color 0.3s; }
+        .status-dot.disconnected { background-color: #ef4444; }
+        .status-dot.connected { background-color: #22c55e; }
+        #notification-banner { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #333; color: white; padding: 1rem; border-radius: 0.5rem; z-index: 300; transition: opacity 0.5s, bottom 0.5s; opacity: 0; pointer-events: none; }
+        #notification-banner.show { opacity: 1; bottom: 40px; }
+        #notification-banner.success { background-color: #22c55e; }
+        #notification-banner.error { background-color: #ef4444; }
+
+        #context-menu { position: fixed; z-index: 1000; width: 180px; background-color: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border-color); padding: 0.5rem; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        .context-menu-item { background: none; border: none; color: var(--text-main); display: block; width: 100%; text-align: left; padding: 0.75rem 1rem; border-radius: 6px; cursor: pointer; }
+        .context-menu-item:hover { background-color: var(--accent-color); color: white; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+        .modal-content { background-color: var(--bg-secondary); border: 1px solid var(--border-color); padding: 2rem; border-radius: 0.5rem; max-width: 400px; width: 90%; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .modal-title { font-size: 1.25rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center; }
+        #rename-modal-input { width: 100%; box-sizing: border-box; margin-bottom: 1.5rem; text-align: center;}
+        .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; }
+
+    </style>
+</head>
+<body>
+    <div id="app-wrapper">
+        <div id="title-bar">
+            <div id="title-label">ZEXON</div>
+            <div style="flex-grow: 1;"></div>
+            <div id="title-bar-buttons">
+                <button id="minimize-btn" class="title-bar-btn">—</button>
+                <button id="close-btn" class="title-bar-btn">✕</button>
+            </div>
+        </div>
+
+        <div id="login-view">
+            <div id="login-card">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 2.25rem; font-weight: 900; background-image: linear-gradient(45deg, #ffffff, #b0b0b0); background-clip: text; -webkit-background-clip: text; color: transparent;">Welcome to Zexon</h1>
+                    <p style="color: var(--text-muted); margin-top: 0.5rem;">Please log in to continue</p>
+                </div>
+                <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <input id="username-input" type="text" placeholder="Username" class="form-input" required>
+                    <input id="password-input" type="password" placeholder="Password" class="form-input" required>
+                    <button type="submit" class="btn btn-primary" style="padding-top: 0.75rem; padding-bottom: 0.75rem; margin-top: 0.5rem;">Login</button>
+                </form>
+                <div class="links" style="text-align: center; margin-top: 1.5rem;">
+                    <span>Don't have an account? </span><a href="#" id="signup-link">Sign Up</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="main-app-view" class="hidden">
+            <nav id="main-nav">
+                <button id="nav-scripts-btn" class="main-nav-btn active">Scripts</button>
+                <button id="nav-settings-btn" class="main-nav-btn">Settings</button>
+            </nav>
+            <main>
+                <div id="scripts-pane" class="content-pane">
+                    <div id="script-tab-bar">
+                         <button id="new-tab-btn">+</button>
+                    </div>
+                    <div id="editor-area"></div>
+                </div>
+                <div id="settings-pane" class="content-pane hidden">
+                    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
+                        <h2 class="setting-category">Editor Settings</h2>
+                        <div class="setting-item">
+                            <div class="setting-item-label">
+                                <h3>Auto Save</h3>
+                                <p>Automatically save script changes periodically.</p>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="auto-save-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <h2 class="setting-category" style="margin-top: 2rem;">Account</h2>
+                        <div class="setting-item">
+                            <div class="setting-item-label">
+                                <h3>Session</h3>
+                                <p>End your current session and return to the login screen.</p>
+                            </div>
+                            <button id="sign-out-btn" class="btn btn-danger">Sign Out</button>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <footer>
+                <div id="status" class="status-indicator">
+                    <div id="status-dot" class="status-dot disconnected"></div>
+                    <span id="status-text">Disconnected</span>
+                </div>
+                <button id="execute-btn" class="btn btn-primary" disabled>Execute</button>
+            </footer>
+        </div>
+    </div>
+    <div id="notification-banner">Notification</div>
+
+    <div id="context-menu" class="hidden">
+        <button class="context-menu-item" id="rename-tab-btn">Rename</button>
+        <button class="context-menu-item" id="cancel-context-btn">Cancel</button>
+    </div>
+
+    <div id="rename-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 class="modal-title">Rename Tab</h2>
+            <input id="rename-modal-input" type="text" class="form-input">
+            <div class="modal-actions">
+                <button id="rename-modal-cancel" class="btn">Cancel</button>
+                <button id="rename-modal-save" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-chaos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-lua.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginView = document.getElementById('login-view');
+        const mainAppView = document.getElementById('main-app-view');
+        const loginForm = document.getElementById('login-form');
+        const signupLink = document.getElementById('signup-link');
+        const navScriptsBtn = document.getElementById('nav-scripts-btn');
+        const navSettingsBtn = document.getElementById('nav-settings-btn');
+        const scriptsPane = document.getElementById('scripts-pane');
+        const settingsPane = document.getElementById('settings-pane');
+        const scriptTabBar = document.getElementById('script-tab-bar');
+        const newTabBtn = document.getElementById('new-tab-btn');
+        const editorArea = document.getElementById('editor-area');
+        const executeBtn = document.getElementById('execute-btn');
+        const statusDot = document.getElementById('status-dot');
+        const statusText = document.getElementById('status-text');
+        const notificationBanner = document.getElementById('notification-banner');
+        const contextMenu = document.getElementById('context-menu');
+        const autoSaveToggle = document.getElementById('auto-save-toggle');
+        const signOutBtn = document.getElementById('sign-out-btn');
+        const renameModalOverlay = document.getElementById('rename-modal-overlay');
+        const renameModalInput = document.getElementById('rename-modal-input');
+        const renameModalSaveBtn = document.getElementById('rename-modal-save');
+        const renameModalCancelBtn = document.getElementById('rename-modal-cancel');
+
+
+        let TABS_DATA = [];
+        let activeTabId = null;
+        let activeContextMenuTabId = null;
+        const MAX_TABS = 10;
+        const editors = {};
+        let autoSaveInterval = null;
+
+        // =================================================================================
+        // INITIALIZATION & AUTH
+        // =================================================================================
+
+        function initApp() {
+            if (localStorage.getItem('zexonSession') === 'loggedIn') {
+                showMainApp();
+            } else {
+                showLogin();
+            }
+
+            document.getElementById('minimize-btn').addEventListener('click', () => window.electronAPI.minimizeWindow());
+            document.getElementById('close-btn').addEventListener('click', () => window.electronAPI.closeWindow());
+            loginForm.addEventListener('submit', handleLogin);
+            signupLink.addEventListener('click', (e) => { e.preventDefault(); window.electronAPI.openSignupLink(); });
+            navScriptsBtn.addEventListener('click', () => switchMainView('scripts'));
+            navSettingsBtn.addEventListener('click', () => switchMainView('settings'));
+            newTabBtn.addEventListener('click', createNewTab);
+            executeBtn.addEventListener('click', executeScript);
+            signOutBtn.addEventListener('click', handleSignOut);
+            
+            contextMenu.addEventListener('click', handleContextMenuClick);
+            document.addEventListener('click', (e) => {
+                if (!contextMenu.contains(e.target)) {
+                    contextMenu.classList.add('hidden');
+                }
+            });
+            
+            renameModalCancelBtn.addEventListener('click', () => renameModalOverlay.classList.add('hidden'));
+            renameModalSaveBtn.addEventListener('click', saveTabRename);
+            renameModalInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') saveTabRename();
+                if (e.key === 'Escape') renameModalOverlay.classList.add('hidden');
+            });
+
+
+            autoSaveToggle.addEventListener('change', setupAutoSave);
+        }
+
+        function showLogin() {
+            loginView.classList.remove('hidden');
+            mainAppView.classList.add('hidden');
+        }
+
+        async function showMainApp() {
+            loginView.classList.add('hidden');
+            mainAppView.classList.remove('hidden');
+            
+            await loadState(); 
+            checkConnection();
+            setInterval(checkConnection, 3000);
+            setupAutoSave();
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username-input').value;
+            const password = document.getElementById('password-input').value;
+            const result = await window.electronAPI.login({ username, password });
+            
+            if (result.success) {
+                localStorage.setItem('zexonSession', 'loggedIn');
+                showNotification(result.message, 'success');
+                showMainApp();
+            } else {
+                showNotification(result.error || 'Login failed.', 'error');
+            }
+        }
+        
+        function handleSignOut() {
+            localStorage.removeItem('zexonSession');
+            showNotification('You have been signed out.', 'info');
+            showLogin();
+        }
+
+        // =================================================================================
+        // MAIN TABS (SCRIPTS/SETTINGS)
+        // =================================================================================
+
+        function switchMainView(viewName) {
+            if (viewName === 'scripts') {
+                scriptsPane.classList.remove('hidden');
+                settingsPane.classList.add('hidden');
+                navScriptsBtn.classList.add('active');
+                navSettingsBtn.classList.remove('active');
+                executeBtn.style.visibility = 'visible';
+            } else {
+                scriptsPane.classList.add('hidden');
+                settingsPane.classList.remove('hidden');
+                navScriptsBtn.classList.remove('active');
+                navSettingsBtn.classList.add('active');
+                executeBtn.style.visibility = 'hidden';
+            }
+        }
+
+        // =================================================================================
+        // DATA (SAVE/LOAD)
+        // =================================================================================
+
+        async function loadState() {
+            const result = await window.electronAPI.loadState();
+            if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
+                TABS_DATA = result.data;
+            } else {
+                TABS_DATA = [{ id: `tab-${Date.now()}`, name: 'Script 1', content: '-- Welcome to Zexon!\nprint("Hello from Zexon!")' }];
+            }
+            renderAllTabs();
+            if (TABS_DATA.length > 0) {
+                 switchTab(TABS_DATA[0].id);
+            } else {
+                 activeTabId = null;
+            }
+        }
+
+        async function saveState() {
+            if (TABS_DATA) {
+                const result = await window.electronAPI.saveState(TABS_DATA);
+                if (!result.success) {
+                   showNotification(`Auto-save failed: ${result.error}`, 'error');
+                }
+            }
+        }
+        
+        function setupAutoSave() {
+            if (autoSaveInterval) clearInterval(autoSaveInterval);
+            if (autoSaveToggle.checked) {
+                autoSaveInterval = setInterval(saveState, 15000);
+            }
+        }
+
+        // =================================================================================
+        // SCRIPT TAB & EDITOR MANAGEMENT
+        // =================================================================================
+
+        function renderAllTabs() {
+            Array.from(scriptTabBar.querySelectorAll('.script-tab')).forEach(t => t.remove());
+            editorArea.innerHTML = '';
+            for (const id in editors) {
+                if (editors[id] && typeof editors[id].destroy === 'function') editors[id].destroy();
+                delete editors[id];
+            }
+            
+            TABS_DATA.forEach(tab => {
+                createTabElement(tab.id, tab.name);
+                createEditorElement(tab.id, tab.content);
+            });
+        }
+
+        function createTabElement(id, name) {
+            const tabEl = document.createElement('div');
+            tabEl.id = id;
+            tabEl.className = 'script-tab';
+            tabEl.draggable = true;
+            tabEl.innerHTML = `<span class="tab-name">${name}</span><button class="close-btn">&times;</button>`;
+            scriptTabBar.insertBefore(tabEl, newTabBtn);
+
+            tabEl.addEventListener('click', () => switchTab(id));
+            tabEl.querySelector('.close-btn').addEventListener('click', e => { e.stopPropagation(); closeTab(id); });
+            tabEl.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showContextMenu(e, id); });
+            
+            tabEl.addEventListener('dragstart', () => tabEl.classList.add('dragging'));
+            tabEl.addEventListener('dragend', () => tabEl.classList.remove('dragging'));
+        }
+        
+        scriptTabBar.addEventListener('dragover', e => {
+            e.preventDefault();
+            const draggingTab = document.querySelector('.script-tab.dragging');
+            if (!draggingTab) return;
+            
+            const afterElement = getDragAfterElement(scriptTabBar, e.clientY);
+            if (afterElement == null) {
+                scriptTabBar.insertBefore(draggingTab, newTabBtn);
+            } else {
+                scriptTabBar.insertBefore(draggingTab, afterElement);
+            }
+        });
+
+        scriptTabBar.addEventListener('drop', () => {
+            const tabElements = [...scriptTabBar.querySelectorAll('.script-tab')];
+            TABS_DATA = tabElements.map(el => TABS_DATA.find(t => t.id === el.id)).filter(Boolean);
+            saveState();
+        });
+        
+        function getDragAfterElement(container, y) {
+            const draggableElements = [...container.querySelectorAll('.script-tab:not(.dragging)')];
+            return draggableElements.reduce((closest, child) => {
+                const box = child.getBoundingClientRect();
+                const offset = y - box.top - box.height / 2;
+                if (offset < 0 && offset > closest.offset) {
+                    return { offset: offset, element: child };
+                } else {
+                    return closest;
+                }
+            }, { offset: Number.NEGATIVE_INFINITY }).element;
+        }
+
+        function createEditorElement(id, content) {
+            const editorContainer = document.createElement('div');
+            editorContainer.id = `editor-${id}`;
+            editorContainer.className = 'editor-container hidden';
+            editorArea.appendChild(editorContainer);
+
+            const editor = ace.edit(editorContainer);
+            editor.session.setMode("ace/mode/lua");
+            editor.setTheme("ace/theme/chaos");
+            editor.session.setValue(content || "");
+            editor.setOptions({
+                showPrintMargin: false,
+                autoScrollEditorIntoView: true,
+                highlightActiveLine: true,
+                highlightSelectedWord: true,
+                enableLiveAutocompletion: true,
+                enableSnippets: true,
+                enableBasicAutocompletion: true,
+                fontSize: "14px"
+            });
+
+            editor.session.on('change', () => {
+                const tab = TABS_DATA.find(t => t.id === id);
+                if (tab) tab.content = editor.session.getValue();
+            });
+            editors[id] = editor;
+        }
+
+        function switchTab(id) {
+            if (activeTabId && editors[activeTabId]) {
+                document.getElementById(activeTabId)?.classList.remove('active');
+                document.getElementById(`editor-${activeTabId}`)?.classList.add('hidden');
+            }
+            activeTabId = id;
+            if (!id) {
+                Array.from(document.querySelectorAll('.editor-container')).forEach(c => c.classList.add('hidden'));
+                return;
+            };
+            document.getElementById(id)?.classList.add('active');
+            const editorContainer = document.getElementById(`editor-${id}`);
+            if (editorContainer) {
+                editorContainer.classList.remove('hidden');
+                editors[id]?.resize();
+                editors[id]?.focus();
+            }
+        }
+
+        function createNewTab() {
+            if (TABS_DATA.length >= MAX_TABS) {
+                showNotification(`You can only have a maximum of ${MAX_TABS} tabs.`, 'error');
+                return;
+            }
+            const newId = `tab-${Date.now()}`;
+            const newName = `Script ${TABS_DATA.length + 1}`;
+            TABS_DATA.push({ id: newId, name: newName, content: '' });
+            createTabElement(newId, newName);
+            createEditorElement(newId, '');
+            switchTab(newId);
+            saveState();
+        }
+
+        function closeTab(id) {
+            const index = TABS_DATA.findIndex(t => t.id === id);
+            if (index === -1) return;
+
+            TABS_DATA.splice(index, 1);
+            if (editors[id] && typeof editors[id].destroy === 'function') editors[id].destroy();
+            delete editors[id];
+            
+            document.getElementById(id)?.remove();
+            const editorContainer = document.getElementById(`editor-${id}`);
+            if (editorContainer) editorContainer.remove();
+
+
+            if (activeTabId === id) {
+                switchTab(TABS_DATA.length > 0 ? TABS_DATA[Math.max(0, index - 1)].id : null);
+            }
+            saveState();
+        }
+
+        // =================================================================================
+        // CONTEXT MENU
+        // =================================================================================
+
+        function showContextMenu(event, tabId) {
+            activeContextMenuTabId = tabId;
+            contextMenu.style.top = `${event.clientY}px`;
+            contextMenu.style.left = `${event.clientX}px`;
+            contextMenu.classList.remove('hidden');
+        }
+        
+        function handleContextMenuClick(event) {
+            event.stopPropagation();
+            if (!activeContextMenuTabId) return;
+
+            const action = event.target.id;
+            if (action === 'rename-tab-btn') {
+                const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
+                if(tab) {
+                    renameModalInput.value = tab.name;
+                    renameModalOverlay.classList.remove('hidden');
+                    renameModalInput.focus();
+                    renameModalInput.select();
+                }
+            }
+            contextMenu.classList.add('hidden');
+        }
+
+        function saveTabRename() {
+            const newName = renameModalInput.value.trim();
+            if (newName && activeContextMenuTabId) {
+                const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
+                if (tab) {
+                    tab.name = newName;
+                    document.querySelector(`#${activeContextMenuTabId} .tab-name`).textContent = tab.name;
+                    saveState();
+                }
+            }
+            renameModalOverlay.classList.add('hidden');
+        }
+
+
+        // =================================================================================
+        // UTILS & BACKEND COMMUNICATION
+        // =================================================================================
+
+        function showNotification(message, type = 'info') {
+            notificationBanner.textContent = message;
+            notificationBanner.className = `show ${type}`;
+            setTimeout(() => { notificationBanner.className = ''; }, 3000);
+        }
+
+        async function executeScript() {
+            const scriptContent = editors[activeTabId]?.session.getValue();
+            if (!scriptContent) return showNotification("Script is empty.", "error");
+            showNotification("Executing script...", "info");
+            const result = await window.electronAPI.executeScript(scriptContent);
+            if (result.success) {
+                showNotification("Script sent successfully!", "success");
+            } else {
+                showNotification(result.message, "error");
+            }
+        }
+
+        async function checkConnection() {
+            const isConnected = await window.electronAPI.checkConnection();
+            statusDot.className = `status-dot ${isConnected ? 'connected' : 'disconnected'}`;
+            statusText.textContent = isConnected ? 'Connected' : 'Disconnected';
+            executeBtn.disabled = !isConnected;
+        }
+
+        initApp();
+    });
+    </script>
+</body>
+</html>
