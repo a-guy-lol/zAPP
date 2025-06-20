@@ -31,18 +31,20 @@ readonly COLOR_MUTED='\033[2;37m'         # Dim white
 # =============================================================================
 display_banner() {
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
-    echo "    ╔══════════════════════════════════════════════════════════╗"
-    echo "    ║                                                          ║"
-    echo "    ║    ███████╗███████╗██╗  ██╗ ██████╗ ███╗    ██╗          ║"
-    echo "    ║    ╚══███╔╝██╔════╝╚██╗██╔╝██╔═══██╗████╗  ██║          ║"
-    echo "    ║      ███╔╝ █████╗    ╚███╔╝ ██║  ██║██╔██╗ ██║          ║"
-    echo "    ║    ███╔╝  ██╔══╝    ██╔██╗ ██║  ██║██║╚██╗██║          ║"
-    echo "    ║    ███████╗███████╗██╔╝ ██╗╚██████╔╝██║ ╚████║          ║"
-    echo "    ║    ╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝  ╚═══╝          ║"
-    echo "    ║                                                          ║"
-    echo "    ║                    Desktop Application Installer        ║"
-    echo "    ║                                                          ║"
-    echo "    ╚══════════════════════════════════════════════════════════╝"
+    cat << "EOF"
+    ╔══════════════════════════════════════════════════════════╗
+    ║                                                          ║
+    ║    ███████╗ ███████╗ ██╗  ██╗ ██████╗  ███╗   ██╗        ║
+    ║    ╚══███╔╝ ██╔════╝ ╚██╗██╔╝██╔═══██╗ ████╗  ██║        ║
+    ║      ███╔╝  █████╗    ╚███╔╝ ██║   ██║ ██╔██╗ ██║        ║
+    ║    ███╔╝    ██╔══╝    ██╔██╗ ██║   ██║ ██║╚██╗██║        ║
+    ║    ███████╗ ███████╗ ██╔╝ ██╗╚██████╔╝ ██║ ╚████║        ║
+    ║    ╚══════╝ ╚══════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═╝  ╚═══╝        ║
+    ║                                                          ║
+    ║                    Desktop Application Installer         ║
+    ║                                                          ║
+    ╚══════════════════════════════════════════════════════════╝
+EOF
     echo -e "${STYLE_RESET}"
     echo
     echo -e "${COLOR_MUTED}${STYLE_DIM}              Modern • Clean • Efficient${STYLE_RESET}"
@@ -87,14 +89,9 @@ echo
 display_separator
 echo
 
-# --- START MODIFICATION FOR INTERACTIVE EXECUTION VIA /dev/tty ---
-# Input for 'read' commands is now explicitly redirected from /dev/tty (your terminal).
-# This allows for interactive prompts even when the script is piped.
-# IMPORTANT: 'sudo' commands will still require your password directly in the terminal.
 display_info "Attempting interactive input via your terminal (/dev/tty)."
 display_warning "You will still need to enter your password for 'sudo' commands."
 echo
-# --- END MODIFICATION ---
 
 # Consent to continue installation
 read -p "$(echo -e "${COLOR_ACCENT}Continue with installation? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" user_consent < /dev/tty
@@ -121,8 +118,9 @@ if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
     read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install < /dev/tty
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
-        display_info "Installing Homebrew package manager"
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        display_info "Installing Homebrew package manager (may take a moment)..."
+        # Suppress Homebrew installation output
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             display_error "Homebrew installation failed"
             exit 1
@@ -136,8 +134,9 @@ display_success "Homebrew package manager"
 
 # Node.js verification
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
-    display_info "Installing Node.js runtime environment"
-    brew install node
+    display_info "Installing Node.js runtime environment..."
+    # Suppress Homebrew install output for node
+    brew install node > /dev/null 2>&1
     if ! command -v node &> /dev/null; then
         display_error "Node.js installation failed"
         exit 1
@@ -157,21 +156,24 @@ display_section_header "Project Configuration"
 
 # Repository management
 if [ ! -d "$SOURCE_REPOSITORY" ]; then
-    display_info "Downloading source code from repository"
-    git clone "https://github.com/${SOURCE_USER}/${SOURCE_REPOSITORY}.git"
+    display_info "Downloading source code from repository..."
+    # Suppress git clone output
+    git clone "https://github.com/${SOURCE_USER}/${SOURCE_REPOSITORY}.git" > /dev/null 2>&1
     if [ $? -ne 0 ]; then
         display_error "Repository download failed"
         exit 1
     fi
     cd "$SOURCE_REPOSITORY"
 else
-    display_info "Updating existing source code"
+    display_info "Updating existing source code..."
     cd "$SOURCE_REPOSITORY"
-    git pull
+    # Suppress git pull output
+    git pull > /dev/null 2>&1
 fi
 
-display_info "Installing project dependencies"
-npm install
+display_info "Installing project dependencies (this may take a while)..."
+# Suppress npm install output
+npm install > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     display_error "Dependency installation failed"
     exit 1
@@ -179,11 +181,14 @@ fi
 
 echo
 display_section_header "Application Build Process"
-npm run build
+display_info "Building the application (this may take a while)..."
+# Suppress npm run build output (electron-builder is very verbose)
+npm run build > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     display_error "Application build failed"
     exit 1
 fi
+display_success "Application built successfully"
 
 echo
 display_section_header "System Installation"
@@ -195,7 +200,7 @@ if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     if [[ ! "$update_choice" =~ ^[Yy]$ ]]; then
         display_error "Installation cancelled - existing version preserved"
         cd ..
-        rm -rf "$SOURCE_REPOSITORY"
+        rm -rf "$SOURCE_REPOSITORY" # Clean up downloaded source code
         exit 0
     fi
 fi
@@ -211,40 +216,50 @@ display_success "Installation package located"
 
 # Administrative privileges
 display_warning "Administrative privileges required for system installation"
-if ! sudo -v; then
+if ! sudo -v; then # This command itself will prompt for password if needed.
     display_error "Administrative access denied (sudo password required)"
     exit 1
 fi
 
 # Close running application
 if pgrep -f "${APPLICATION_NAME}" > /dev/null; then
-    display_info "Terminating running application instances"
+    display_info "Terminating running application instances..."
+    # Suppress killall output
     sudo killall "${APPLICATION_NAME}" 2>/dev/null
-    sleep 2
+    sleep 2 # Give it a moment to terminate
 fi
 
 # Remove existing installation
 if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
-    display_info "Removing previous installation"
-    sudo rm -rf "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
+    display_info "Removing previous installation..."
+    # Suppress rm output
+    sudo rm -rf "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" > /dev/null 2>&1
 fi
 
 # Install new version
-display_info "Installing application to system directory"
-VOLUME_MOUNT=$(hdiutil attach -nobrowse -noautoopen "$INSTALLER_PACKAGE" | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
+display_info "Installing application to system directory..."
+# Suppress hdiutil and ditto output
+VOLUME_MOUNT=$(hdiutil attach -nobrowse -noautoopen "$INSTALLER_PACKAGE" 2>/dev/null | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
 if [ -z "$VOLUME_MOUNT" ]; then
     display_error "Failed to mount installation package"
     exit 1
 fi
 
-sudo ditto -rsrc "${VOLUME_MOUNT}/${APPLICATION_NAME}.app" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
+sudo ditto -rsrc "${VOLUME_MOUNT}/${APPLICATION_NAME}.app" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     display_error "Application installation failed"
-    hdiutil detach "$VOLUME_MOUNT" -force >/dev/null
+    hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
     exit 1
 fi
 
-hdiutil detach "$VOLUME_MOUNT" -force >/dev/null
+hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
+display_success "Application installed successfully"
+
+# Clean up source repository
+display_info "Cleaning up temporary files..."
+cd ..
+rm -rf "$SOURCE_REPOSITORY" > /dev/null 2>&1
+display_success "Cleanup complete"
 
 echo
 echo -e "${COLOR_SUCCESS}${STYLE_BOLD}✓ Installation Successfully Completed${STYLE_RESET}"
