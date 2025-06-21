@@ -1,5 +1,5 @@
 #!/bin/bash
-# a v.2
+
 readonly APPLICATION_NAME="Zexon"
 readonly APPLICATION_VERSION="1.0.0"
 readonly SOURCE_USER="a-guy-lol"
@@ -23,18 +23,19 @@ readonly COLOR_MUTED='\033[2;37m'
 display_banner() {
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
     cat << "EOF"
-    ╔══════════════════════════════════════════════════════════╗
-    ║                                                          ║
-    ║    ███████╗ ███████╗ ██╗  ██╗ ██████╗  ███╗   ██╗        ║
-    ║    ╚══███╔╝ ██╔════╝ ╚██╗██╔╝██╔═══██╗ ████╗  ██║        ║
-    ║      ███╔╝  █████╗    ╚███╔╝ ██║   ██║ ██╔██╗ ██║        ║
-    ║    ███╔╝    ██╔══╝    ██╔██╗ ██║   ██║ ██║╚██╗██║        ║
-    ║    ███████╗ ███████╗ ██╔╝ ██╗╚██████╔╝ ██║ ╚████║        ║
-    ║    ╚══════╝ ╚══════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═╝  ╚═══╝        ║
-    ║                                                          ║
-    ║                    Desktop Application Installer         ║
-    ║                                                          ║
-    ╚══════════════════════════════════════════════════════════╝
+    ╔═════════════════════════════════════════════════════════╗
+    ║                                                         ║
+    ║    ███████╗  ███████╗ ██╗  ██╗  ██████╗   ███╗   ██╗    ║
+    ║    ╚══███╔╝  ██╔════╝ ╚██╗██╔╝ ██╔═══██╗  ████╗  ██║    ║
+    ║      ███╔╝   █████╗    ╚███╔╝  ██║   ██║  ██╔██╗ ██║    ║
+    ║     ███╔╝    ██╔══╝    ██╔██╗  ██║   ██║  ██║╚██╗██║    ║
+    ║    ███████╗  ███████╗ ██╔╝ ██╗  ╚██████╔╝ ██║ ╚████║    ║
+    ║    ╚══════╝  ╚══════╝ ╚═╝  ╚═╝   ╚═════╝  ╚═╝  ╚═══╝    ║
+    ║                                                         ║
+    ║                  Zexon Script Editor                    ║
+    ║           Designed on intel/arm for Hydrogen            ║
+    ║                                                         ║
+    ╚═════════════════════════════════════════════════════════╝
 EOF
     echo -e "${STYLE_RESET}"
     echo
@@ -76,7 +77,7 @@ echo
 display_separator
 echo
 
-display_info " "
+display_info ""
 display_warning "You will still need to enter your password for 'sudo' commands."
 echo
 
@@ -102,7 +103,7 @@ if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
     read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install < /dev/tty
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
-        display_info "Installing Homebrew package manager (may take a moment)..."
+        display_info "Installing Homebrew package manager..."
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" > /dev/null 2>&1
         if [ $? -ne 0 ]; then
             display_error "Homebrew installation failed"
@@ -148,7 +149,7 @@ else
     git pull > /dev/null 2>&1
 fi
 
-display_info "Installing project dependencies (this may take a while)..."
+display_info "Installing project dependencies..."
 npm install > /dev/null 2>&1
 if [ $? -ne 0 ]; then
     display_error "Dependency installation failed"
@@ -157,9 +158,8 @@ fi
 
 echo
 display_section_header "Application Build Process"
-display_info "Building the application (this may take a while)..."
-# Capture and display all output (stdout and stderr) from npm run build
-npm run build 2>&1
+display_info "Building the application..."
+npm run build > /dev/null 2>&1 # Suppress output again
 if [ $? -ne 0 ]; then
     display_error "Application build failed"
     exit 1
