@@ -19,7 +19,7 @@ If you want to edit the code or change the app then:
 # 1. Clone the Project
 First, download the project from the Github.
 ```
-git clone [https://github.com/a-guy-lol/zAPP.git](https://github.com/a-guy-lol/zAPP.git)
+git clone https://github.com/a-guy-lol/zAPP.git
 cd zAPP
 ```
 # 3. Installing the Dependencies
