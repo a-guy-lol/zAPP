@@ -20,6 +20,14 @@ readonly COLOR_ACCENT='\033[1;37m'
 readonly COLOR_TEXT='\033[0;37m'
 readonly COLOR_MUTED='\033[2;37m'
 
+setup_environment() {
+    if [[ "$(uname -m)" == "arm64" ]]; then # Apple Silicon
+        export PATH="/opt/homebrew/bin:$PATH"
+    else # Intel
+        export PATH="/usr/local/bin:$PATH"
+    fi
+}
+
 display_banner() {
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
     cat << "EOF"
@@ -36,7 +44,7 @@ display_banner() {
     ║            Designed on intel/arm for Hydrogen           ║
     ║                                                         ║
     ╚═════════════════════════════════════════════════════════╝
-    installer v2
+    installer v3
 EOF
     echo -e "${STYLE_RESET}"
     echo
@@ -67,6 +75,8 @@ display_warning() {
 display_separator() {
     echo -e "${COLOR_MUTED}${STYLE_DIM}  ────────────────────────────────────────────────────────${STYLE_RESET}"
 }
+
+setup_environment
 
 display_banner
 
@@ -120,10 +130,19 @@ fi
 display_success "Xcode Command Line Tools detected"
 
 if ! command -v brew &> /dev/null; then
-    display_error "Homebrew package manager not found."
-    display_info "Please install Homebrew by visiting https://brew.sh/ and following the instructions."
-    display_info "Re-run this installer after Homebrew has been successfully installed."
-    exit 1
+    display_warning "Homebrew package manager not found."
+    read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install < /dev/tty
+    if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
+        display_info "Installing Homebrew package manager..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/tty
+        if [ $? -ne 0 ]; then
+            display_error "Homebrew installation failed"
+            exit 1
+        fi
+    else
+        display_error "Installation cancelled - Homebrew required"
+        exit 1
+    fi
 fi
 display_success "Homebrew package manager"
 
