@@ -11,9 +11,10 @@
     "editor",
     "lua"
   ],
-  "author": "mrWho263",
+  "author": "Zexon Development (Private Team)",
   "license": "ISC",
   "dependencies": {
+    "discord-rpc": "^4.0.1",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
@@ -30,7 +31,8 @@
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
       "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
+      "entitlementsInherit": "entitlements.mac.plist",
+      "arch": ["x64", "arm64"]
     },
     "dmg": {
       "contents": [
