@@ -30,7 +30,6 @@ readonly COLOR_MUTED='\033[2;37m'
 # UI Display Functions
 # ==============================================================================
 
-# Displays the main ASCII art banner for the application.
 display_banner() {
     echo -e "${COLOR_PRIMARY}${STYLE_BOLD}"
     cat << "EOF"
@@ -54,37 +53,26 @@ EOF
     echo
 }
 
-# Displays a formatted section header.
-# $1: Header text
 display_section_header() {
     echo -e "${COLOR_ACCENT}${STYLE_BOLD}┌─ $1 ${STYLE_RESET}"
 }
 
-# Displays a success message.
-# $1: Message text
 display_success() {
     echo -e "${COLOR_SUCCESS}  ✓ $1${STYLE_RESET}"
 }
 
-# Displays an error message.
-# $1: Message text
 display_error() {
     echo -e "${COLOR_ERROR}  ✗ $1${STYLE_RESET}"
 }
 
-# Displays an informational message.
-# $1: Message text
 display_info() {
     echo -e "${COLOR_INFO}  → $1${STYLE_RESET}"
 }
 
-# Displays a warning message.
-# $1: Message text
 display_warning() {
     echo -e "${COLOR_WARNING}  ⚠ $1${STYLE_RESET}"
 }
 
-# Displays a visual separator.
 display_separator() {
     echo -e "${COLOR_MUTED}${STYLE_DIM}  ────────────────────────────────────────────────────────${STYLE_RESET}"
 }
@@ -92,9 +80,8 @@ display_separator() {
 
 # ==============================================================================
 # Main Script Logic
-# =================================================E=============================
+# ==============================================================================
 
-# --- Initial Display and User Consent ---
 display_banner
 
 echo -e "${COLOR_TEXT}${STYLE_BOLD}Application Overview${STYLE_RESET}"
@@ -119,17 +106,14 @@ echo
 display_separator
 echo
 
-# --- Dependency and System Checks ---
 display_section_header "System Requirements Check"
 
-# Check for macOS
 if [[ "$(uname)" != "Darwin" ]]; then
     display_error "macOS required for this installation"
     exit 1
 fi
 display_success "macOS detected"
 
-# Check for Xcode Command Line Tools, as Homebrew needs them
 if ! xcode-select -p &>/dev/null; then
     display_warning "Xcode Command Line Tools are required."
     read -p "$(echo -e "${COLOR_ACCENT}  Install Xcode Command Line Tools now? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" xcode_install < /dev/tty
@@ -137,7 +121,6 @@ if ! xcode-select -p &>/dev/null; then
         display_info "Starting Xcode Command Line Tools installation..."
         display_warning "A system dialog will appear. Please click 'Install' and wait for it to complete."
         xcode-select --install
-        # Pause the script until the user confirms Xcode tools are installed, as it's a GUI process
         read -p "$(echo -e "${COLOR_ACCENT}After the installation is finished, press [Enter] in this terminal to continue.${STYLE_RESET}")"
         if ! xcode-select -p &>/dev/null; then
             display_error "Xcode Tools installation could not be verified. Please install them manually and re-run the script."
@@ -150,26 +133,22 @@ if ! xcode-select -p &>/dev/null; then
 fi
 display_success "Xcode Command Line Tools detected"
 
-# Check for Homebrew
 if ! command -v brew &> /dev/null; then
     display_warning "Homebrew package manager not found"
     read -p "$(echo -e "${COLOR_ACCENT}  Install Homebrew automatically? ${COLOR_MUTED}[y/N]${STYLE_RESET} ")" homebrew_install < /dev/tty
     if [[ "$homebrew_install" =~ ^[Yy]$ ]]; then
         display_info "Installing Homebrew package manager..."
-        # Run the installer interactively, allowing the user to see prompts and enter their password
-        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" < /dev/tty
         if [ $? -ne 0 ]; then
             display_error "Homebrew installation failed"
             exit 1
         fi
         display_info "Configuring shell to use Homebrew..."
-        # Add Homebrew to the current script's PATH based on architecture
         if [[ "$(uname -m)" == "arm64" ]]; then # Apple Silicon
             eval "$(/opt/homebrew/bin/brew shellenv)"
         else # Intel
             eval "$(/usr/local/bin/brew shellenv)"
         fi
-        # Verify that the brew command is now available
         if ! command -v brew &> /dev/null; then
             display_error "Failed to configure Homebrew in the shell. Please re-run the script or configure your shell manually."
             exit 1
@@ -181,7 +160,6 @@ if ! command -v brew &> /dev/null; then
 fi
 display_success "Homebrew package manager"
 
-# Check for Node.js and npm
 if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
     display_info "Installing Node.js runtime environment..."
     brew install node > /dev/null 2>&1
@@ -192,7 +170,6 @@ if ! command -v node &> /dev/null || ! command -v npm &> /dev/null; then
 fi
 display_success "Node.js runtime environment"
 
-# Check for Git
 if ! command -v git &> /dev/null; then
     display_warning "Git version control system not found."
     display_info "Attempting to install Git using Homebrew..."
@@ -255,7 +232,6 @@ if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     fi
 fi
 
-# Find the built .dmg package
 INSTALLER_PACKAGE=$(find dist -name "*.dmg" -print -quit)
 
 if [ -z "$INSTALLER_PACKAGE" ]; then
@@ -264,7 +240,6 @@ if [ -z "$INSTALLER_PACKAGE" ]; then
 fi
 display_success "Installation package located"
 
-# Get sudo credentials upfront
 display_warning "Administrative privileges required for system installation"
 if ! sudo -v; then
     display_error "Administrative access denied (sudo password required)"
@@ -302,7 +277,7 @@ fi
 hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
 display_success "Application installed successfully"
 
-# --- Cleanup ---
+# --- Cleanup and Finalization ---
 display_info "Cleaning up temporary files..."
 cd ..
 rm -rf "$SOURCE_REPOSITORY" > /dev/null 2>&1
@@ -316,4 +291,3 @@ open -a "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app"
 echo
 display_separator
 echo -e "${COLOR_PRIMARY}${STYLE_BOLD}    Ready for Use!${STYLE_RESET}"
-
