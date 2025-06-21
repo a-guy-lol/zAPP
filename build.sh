@@ -46,6 +46,7 @@ display_banner() {
     ║            Designed on intel/arm for Hydrogen           ║
     ║                                                         ║
     ╚═════════════════════════════════════════════════════════╝
+    [installer v1]
 EOF
     echo -e "${STYLE_RESET}"
     echo
