@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# a v.2
 readonly APPLICATION_NAME="Zexon"
 readonly APPLICATION_VERSION="1.0.0"
 readonly SOURCE_USER="a-guy-lol"
@@ -158,7 +158,8 @@ fi
 echo
 display_section_header "Application Build Process"
 display_info "Building the application (this may take a while)..."
-npm run build # Removed output suppression
+# Capture and display all output (stdout and stderr) from npm run build
+npm run build 2>&1
 if [ $? -ne 0 ]; then
     display_error "Application build failed"
     exit 1
