@@ -275,6 +275,7 @@
         const MAX_TABS = 10;
         const editors = {};
         let autoSaveInterval = null;
+        let connectionCheckInterval = null;
 
         async function saveState() {
             if (TABS_DATA) {
@@ -335,7 +336,8 @@
             
             await loadState();
             checkConnection();
-            setInterval(checkConnection, 3000);
+            if (connectionCheckInterval) clearInterval(connectionCheckInterval);
+            connectionCheckInterval = setInterval(checkConnection, 3000);
             setupAutoSave();
         }
 
@@ -388,6 +390,7 @@
                  switchTab(TABS_DATA[0].id);
             } else {
                  activeTabId = null;
+                 window.electronAPI.updateActiveScriptName('No Script Open');
             }
         }
         
@@ -408,7 +411,6 @@
             
             TABS_DATA.forEach(tab => {
                 createTabElement(tab.id, tab.name);
-                createEditorElement(tab.id, tab.content);
             });
         }
 
@@ -496,14 +498,26 @@
             activeTabId = id;
             if (!id) {
                 Array.from(document.querySelectorAll('.editor-container')).forEach(c => c.classList.add('hidden'));
+                window.electronAPI.updateActiveScriptName('No Script Open');
                 return;
             };
             document.getElementById(id)?.classList.add('active');
-            const editorContainer = document.getElementById(`editor-${id}`);
+            let editorContainer = document.getElementById(`editor-${id}`);
+            if (!editorContainer) {
+                const tab = TABS_DATA.find(t => t.id === id);
+                if (tab) {
+                    createEditorElement(tab.id, tab.content);
+                    editorContainer = document.getElementById(`editor-${id}`);
+                }
+            }
             if (editorContainer) {
                 editorContainer.classList.remove('hidden');
                 editors[id]?.resize();
                 editors[id]?.focus();
+                const tab = TABS_DATA.find(t => t.id === id);
+                if (tab) {
+                    window.electronAPI.updateActiveScriptName(tab.name);
+                }
             }
         }
 
@@ -516,7 +530,6 @@
             const newName = `Script ${TABS_DATA.length + 1}`;
             TABS_DATA.push({ id: newId, name: newName, content: '' });
             createTabElement(newId, newName);
-            createEditorElement(newId, '');
             switchTab(newId);
             saveState();
         }
@@ -571,6 +584,9 @@
                 if (tab) {
                     tab.name = newName;
                     document.querySelector(`#${activeContextMenuTabId} .tab-name`).textContent = tab.name;
+                    if (activeTabId === activeContextMenuTabId) {
+                         window.electronAPI.updateActiveScriptName(tab.name);
+                    }
                     saveState();
                 }
             }
