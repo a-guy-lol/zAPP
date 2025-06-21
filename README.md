@@ -1,6 +1,6 @@
-# Zexon Script Editor
+# Z Script Editor
 
-Welcome to Zexon! This is a simple app to execute scripts on Hydrogen LuaU executor.
+Welcome to Zexon! This is a simple app to execute scripts on Z.
 
 # Installing (macOS intel/arm64)
 This is the fastest way to get the app.
@@ -11,7 +11,7 @@ Copy and paste this one command into the terminal and press Enter:
 ```
 curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh" | bash
 ```
-That's it! The script will automatically install everything you need. The Zexon app will be in your /Applications folder when it's done.
+That's it! The script will automatically install everything you need. The Z app will be in your /Applications folder when it's done.
 
 # How to Build Locally (for Developers)
 If you want to edit the code or change the app then:
