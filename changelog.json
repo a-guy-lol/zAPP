@@ -1,0 +1,23 @@
+{
+  "updates": [
+    
+    {
+      "title": "First build",
+      "version": "1.0.0",
+      "changelogs": [
+        "Added core functionality",
+        "User login",
+        "Script Editor",
+        "Rearrange tabs, rename, auto-save and more",
+        "Settings tab"
+      ]
+    },
+    
+
+
+
+
+    
+  ]
+  
+}
