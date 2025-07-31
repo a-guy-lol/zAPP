@@ -1,17 +1,20 @@
-# Z Script Editor
+### 🚀 Introducing Zyron!
 
-Welcome to Zexon! This is a simple app to execute scripts on Z.
+Formerly known as **ZexonUI**, the app has been renamed to **Zyron** — a sleek, compact UI tool that connects with **[Hydrogen](https://hydrogen.lat)** to help you run your scripts.
 
-# Installing (macOS intel/arm64)
-This is the fastest way to get the app.
+🧠 **Zyron** now supports **both M-Series (ARM64)** and **Intel** devices. You can download the builds directly from the release below.
 
-Open the Terminal app on your Mac.
+📦 Ready to get started? Check the attached downloads and images to preview the experience!
+[Click me to download Intel](https://github.com/a-guy-lol/zAPP/releases/download/Release/Zyron-Intel.zip)
+OR
+[Click me to download ARM-64](https://github.com/a-guy-lol/zAPP/releases/download/Release/Zyron-Arm64.zip)
 
-Copy and paste this one command into the terminal and press Enter:
-```
-curl -sL "https://api.zexon.workers.dev/zexonUI-install" | bash
-```
-That's it! The script will automatically install everything you need. The Z app will be in your /Applications folder when it's done.
+![Zyron 2025-07-31 09 55 26](https://github.com/user-attachments/assets/d0947590-d8e2-4fa8-8aea-9d3c2a6565ab)
+![System Settings 2025-07-31 09 54 53](https://github.com/user-attachments/assets/470195ec-b037-40b7-a718-000336b63193)
+![Zyron 2025-07-31 
+
+
+
 
 # How to Build Locally (for Developers)
 If you want to edit the code or change the app then:
