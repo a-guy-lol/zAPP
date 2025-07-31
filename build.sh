@@ -1,6 +1,6 @@
 #!/bin/bash
 
-readonly APPLICATION_NAME="Zexon"
+readonly APPLICATION_NAME="Zyron"
 readonly APPLICATION_VERSION="1.0.0"
 readonly SOURCE_USER="a-guy-lol"
 readonly SOURCE_REPOSITORY="zAPP"
@@ -40,7 +40,7 @@ display_banner() {
     ║   ███████╗  ███████╗ ██╔╝ ██╗  ╚██████╔╝   ██║ ╚████║   ║
     ║   ╚══════╝  ╚══════╝ ╚═╝  ╚═╝   ╚═════╝    ╚═╝  ╚═══╝   ║
     ║                                                         ║
-    ║                   Zexon Script Editor                   ║
+    ║                   Zyron Script Editor                   ║
     ║            Designed on intel/arm for Hydrogen           ║
     ║                                                         ║
     ╚═════════════════════════════════════════════════════════╝
