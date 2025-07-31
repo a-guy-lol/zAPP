@@ -4,7 +4,7 @@ Formerly known as **ZexonUI**, the app has been renamed to **Zyron** — a sleek
 
 🧠 **Zyron** now supports **both M-Series (ARM64)** and **Intel** devices. You can download the builds directly from the release below.
 
-📦 Ready to get started? Check the attached downloads and images to preview the experience!
+📦 Ready to get started? Check the attached downloads and images to preview the experience!\
 [Click me to download Intel](https://github.com/a-guy-lol/zAPP/releases/download/Release/Zyron-Intel.zip)
 
 OR
