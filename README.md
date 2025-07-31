@@ -11,7 +11,7 @@ OR\
 
 ![Zyron 2025-07-31 09 55 26](https://github.com/user-attachments/assets/d0947590-d8e2-4fa8-8aea-9d3c2a6565ab)
 ![System Settings 2025-07-31 09 54 53](https://github.com/user-attachments/assets/470195ec-b037-40b7-a718-000336b63193)
-![Zyron 2025-07-31 
+![Zyron 2025-07-31 09 55 55](https://github.com/user-attachments/assets/70308b3c-f9e0-43a9-8e1a-6baed3ef5659)
 
 
 
