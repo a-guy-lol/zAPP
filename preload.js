@@ -12,4 +12,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onRequestFinalSave: (callback) => ipcRenderer.on('request-final-save', callback),
   notifyFinalSaveComplete: () => ipcRenderer.send('final-save-complete'),
   updateActiveScriptName: (scriptName) => ipcRenderer.send('update-active-script-name', scriptName),
+  getChangelog: () => ipcRenderer.invoke('get-changelog'),
+  clearAppData: () => ipcRenderer.invoke('clear-app-data'),
+  setOpacity: (opacity) => ipcRenderer.send('set-opacity', opacity),
+  toggleDiscordRpc: (isEnabled) => ipcRenderer.invoke('toggle-discord-rpc', isEnabled),
+  getDiscordRpcStatus: () => ipcRenderer.invoke('get-discord-rpc-status'),
 });
