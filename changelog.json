@@ -1,23 +1,38 @@
 {
-  "updates": [
-    
+  "latestVersion": "1.1.1",
+  "changelogs": [
     {
-      "title": "First build",
-      "version": "1.0.0",
-      "changelogs": [
-        "Added core functionality",
-        "User login",
-        "Script Editor",
-        "Rearrange tabs, rename, auto-save and more",
-        "Settings tab"
+      "version": "1.1.1",
+      "date": "2025-07-31",
+      "changes": [
+        "Fixed Discord RPC functionality to properly display current script name.",
+        "Fixed rename button in settings - now opens modal instead of broken prompt.",
+        "Removed opacity slider from settings as requested.",
+        "Discord RPC now correctly shows 'Script 1.lua' format for current tab.",
+        "Improved Discord RPC connection stability."
       ]
     },
-    
-
-
-
-
-    
+    {
+      "version": "1.1.0",
+      "date": "2025-07-31",
+      "changes": [
+        "Added 'About' tab with application info and changelog.",
+        "Added settings for opacity, Discord RPC, and notifications.",
+        "Added 'Clear App Data' functionality.",
+        "Increased max tabs limit to 30 and added notification for limit.",
+        "Fixed user renaming bug.",
+        "UI/UX improvements and sectioning in Settings."
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2025-07-30",
+      "changes": [
+        "Initial release of Zyron UI.",
+        "Core script editing and execution functionality.",
+        "Tab management system.",
+        "Glassmorphism UI with performance mode."
+      ]
+    }
   ]
-  
 }
