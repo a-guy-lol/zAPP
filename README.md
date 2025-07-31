@@ -13,8 +13,13 @@ OR\
 ![System Settings 2025-07-31 09 54 53](https://github.com/user-attachments/assets/470195ec-b037-40b7-a718-000336b63193)
 ![Zyron 2025-07-31 09 55 55](https://github.com/user-attachments/assets/70308b3c-f9e0-43a9-8e1a-6baed3ef5659)
 
-
-
+# Cant install with zip?
+Copy and paste this one command into the terminal and press Enter:
+```
+curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh" | bash
+curl -sL "https://api.zexon.workers.dev/zexonUI-install" | bash
+```
+That's it! The script will automatically install everything you need. The Z app will be in your /Applications folder when it's done.
 
 # How to Build Locally (for Developers)
 If you want to edit the code or change the app then:
