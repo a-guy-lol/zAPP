@@ -7,17 +7,18 @@ const { spawn } = require('child_process');
 const DiscordRPC = require('discord-rpc');
 
 const clientId = '1385844569052151944';
-const rpc = new DiscordRPC.Client({ transport: 'ipc' });
+let rpc = new DiscordRPC.Client({ transport: 'ipc' });
 let rpcStartTime = new Date();
 let presenceUpdateInterval;
 
 let mainWindow;
 let isQuitting = false;
+let rpcEnabled = true; // Default to true
 let currentActiveScriptTabName = 'No Script Open';
 let isHydrogenConnected = false;
 
-const DATA_DIR = path.join(os.homedir(), 'Documents', 'zexonData');
-const DATA_FILE = path.join(DATA_DIR, 'zexon_app_data.json');
+const DATA_DIR = path.join(os.homedir(), 'Documents', 'zyronData');
+const DATA_FILE = path.join(DATA_DIR, 'zyron_app_data.json');
 
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -32,7 +33,7 @@ function createWindow() {
     frame: false,
     transparent: true,
     show: false,
-    icon: path.join(__dirname, 'zexon-icon.icns'),
+    icon: path.join(__dirname, 'zyron-icon.icns'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -65,11 +66,11 @@ async function setDiscordActivity(activityDetails = {}) {
     }
 
     const activity = {
-        details: `Editing ${currentActiveScriptTabName}.lua`,
+        details: `✧ Editing ${currentActiveScriptTabName}.lua ✧`,
         state: stateText,
         startTimestamp: rpcStartTime,
-        largeImageText: 'Zexon Editor',
-        largeImageKey: 'zexon_icon',
+        largeImageText: 'Zyron Editor',
+        largeImageKey: 'zyron_icon',
         instance: false,
     };
 
@@ -86,8 +87,16 @@ async function setDiscordActivity(activityDetails = {}) {
 }
 
 function setupDiscordRPC() {
+    if (!rpcEnabled) return;
+    
+    // If rpc client was destroyed, create a new one
+    if (!rpc) {
+        rpc = new DiscordRPC.Client({ transport: 'ipc' });
+    }
+
     rpc.on('ready', () => {
         setDiscordActivity();
+        if (presenceUpdateInterval) clearInterval(presenceUpdateInterval);
         presenceUpdateInterval = setInterval(() => {
             setDiscordActivity();
         }, 15 * 1000);
@@ -100,7 +109,15 @@ function setupDiscordRPC() {
     rpc.login({ clientId })
         .catch(error => {
             console.error('Failed to connect to Discord Rich Presence:', error);
+            rpc = null; // Set to null on failure to allow re-creation
         });
+}
+
+function shutdownDiscordRPC() {
+    if (!rpc) return;
+    clearInterval(presenceUpdateInterval);
+    rpc.destroy().catch(console.error);
+    rpc = null; // Destroy and nullify
 }
 
 ipcMain.on('minimize-window', () => {
@@ -111,8 +128,22 @@ ipcMain.on('close-window', () => {
   app.quit();
 });
 
+ipcMain.handle('toggle-discord-rpc', (event, isEnabled) => {
+    rpcEnabled = isEnabled;
+    if (isEnabled) {
+        setupDiscordRPC();
+    } else {
+        shutdownDiscordRPC();
+    }
+    return rpcEnabled;
+});
+
+ipcMain.handle('get-discord-rpc-status', () => {
+    return rpcEnabled;
+});
+
 ipcMain.on('open-signup-link', () => {
-  shell.openExternal('https://api.zexon.workers.dev/');
+  
 });
 
 ipcMain.handle('login', async (event, credentials) => {
@@ -193,6 +224,36 @@ ipcMain.on('update-active-script-name', (event, scriptName) => {
     }
 });
 
+ipcMain.handle('get-changelog', async () => {
+    try {
+        const changelogPath = path.join(__dirname, 'changelog.json');
+        const data = fs.readFileSync(changelogPath, 'utf-8');
+        return JSON.parse(data);
+    } catch (error) {
+        console.error('Failed to read changelog:', error);
+        return null;
+    }
+});
+
+ipcMain.handle('clear-app-data', async () => {
+    try {
+        if (fs.existsSync(DATA_FILE)) {
+            fs.unlinkSync(DATA_FILE);
+        }
+        // Optionally, could add more data clearing logic here
+        return { success: true };
+    } catch (error) {
+        console.error('Failed to clear app data:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.on('set-opacity', (event, opacity) => {
+    if (mainWindow) {
+        mainWindow.setOpacity(opacity);
+    }
+});
+
 ipcMain.handle('load-state', async () => {
     try {
         if (!fs.existsSync(DATA_FILE)) {
@@ -227,19 +288,13 @@ app.on('before-quit', (event) => {
     if (mainWindow && !mainWindow.isDestroyed()) {
         ipcMain.once('final-save-complete', () => {
             isQuitting = true;
-            if (rpc) {
-                clearInterval(presenceUpdateInterval);
-                rpc.destroy(); 
-            }
+            shutdownDiscordRPC();
             app.quit();
         });
         mainWindow.webContents.send('request-final-save');
     } else {
         isQuitting = true;
-        if (rpc) {
-            clearInterval(presenceUpdateInterval);
-            rpc.destroy();
-        }
+        shutdownDiscordRPC();
         app.quit();
     }
 });
