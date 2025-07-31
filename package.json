@@ -1,5 +1,5 @@
 {
-  "name": "zexonui",
+  "name": "zyronui",
   "version": "1.0.0",
   "description": "luaU script editor",
   "main": "main.js",
@@ -22,30 +22,24 @@
     "electron-builder": "^24.6.3"
   },
   "build": {
-    "appId": "com.zexon.ui",
-    "productName": "Zexon",
+    "appId": "com.zyron.ui",
+    "productName": "Zyron",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "target": "dmg",
-      "icon": "zexon-icon.icns",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ],
+      "icon": "zyron-icon.icns",
       "gatekeeperAssess": false,
       "hardenedRuntime": true,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist"
-    },
-    "dmg": {
-      "contents": [
-        {
-          "x": 130,
-          "y": 220
-        },
-        {
-          "x": 410,
-          "y": 220,
-          "type": "link",
-          "path": "/Applications"
-        }
-      ]
     }
   }
 }
