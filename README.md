@@ -17,7 +17,6 @@ OR\
 Copy and paste this one command into the terminal and press Enter:
 ```
 curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/build.sh" | bash
-curl -sL "https://api.zexon.workers.dev/zexonUI-install" | bash
 ```
 That's it! The script will automatically install everything you need. The Z app will be in your /Applications folder when it's done.
 
