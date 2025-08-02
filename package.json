@@ -25,13 +25,6 @@
   "build": {
     "appId": "com.zyron.ui",
     "productName": "Zyron",
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "a-guy-lol",
-        "repo": "zAPP"
-      }
-    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
