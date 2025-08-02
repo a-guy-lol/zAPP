@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain, shell } = require('electron');
+const { autoUpdater } = require('electron-updater');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -19,6 +20,50 @@ let isHydrogenConnected = false;
 
 const DATA_DIR = path.join(os.homedir(), 'Documents', 'zyronData');
 const DATA_FILE = path.join(DATA_DIR, 'zyron_app_data.json');
+
+// Configure auto-updater
+autoUpdater.setFeedURL({
+  provider: 'github',
+  owner: 'a-guy-lol',
+  repo: 'zAPP'
+});
+
+// Auto-updater events
+autoUpdater.on('checking-for-update', () => {
+  console.log('Checking for update...');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('Update available.', info);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-available', info);
+  }
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  console.log('Update not available.', info);
+});
+
+autoUpdater.on('error', (err) => {
+  console.log('Error in auto-updater. ' + err);
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  let log_message = "Download speed: " + progressObj.bytesPerSecond;
+  log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+  log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+  console.log(log_message);
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('download-progress', progressObj);
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('Update downloaded');
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('update-downloaded', info);
+  }
+});
 
 if (!fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -46,6 +91,15 @@ function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     setupDiscordRPC();
+    
+    // Check for updates when app is ready (wait 3 seconds)
+    setTimeout(() => {
+      if (!app.isPackaged) {
+        console.log('Development mode - skipping update check');
+        return;
+      }
+      autoUpdater.checkForUpdatesAndNotify();
+    }, 3000);
   });
 
   mainWindow.on('closed', () => {
@@ -277,6 +331,27 @@ ipcMain.handle('save-state', async (event, dataToSave) => {
         console.error('Failed to save state:', error.message);
         return { success: false, error: error.message };
     }
+});
+
+// Auto-updater IPC handlers
+ipcMain.handle('check-for-updates', async () => {
+    if (!app.isPackaged) {
+        return { success: false, message: 'Updates only available in packaged app' };
+    }
+    try {
+        const result = await autoUpdater.checkForUpdates();
+        return { success: true, updateInfo: result };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('install-update', () => {
+    autoUpdater.quitAndInstall();
+});
+
+ipcMain.handle('get-app-version', () => {
+    return app.getVersion();
 });
 
 app.on('before-quit', (event) => {
