@@ -1,0 +1,10 @@
+# Build and dependency files
+node_modules/
+package-lock.json
+dist/
+
+# macOS
+.DS_Store
+
+# Private files
+.release-notes
