@@ -1,6 +1,6 @@
 {
   "name": "zyronui",
-  "version": "1.0.0",
+  "version": "1.1.2",
   "description": "luaU script editor",
   "main": "main.js",
   "scripts": {
@@ -15,6 +15,7 @@
   "license": "ISC",
   "dependencies": {
     "discord-rpc": "^4.0.1",
+    "electron-updater": "^6.6.2",
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
@@ -24,22 +25,33 @@
   "build": {
     "appId": "com.zyron.ui",
     "productName": "Zyron",
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "a-guy-lol",
+        "repo": "zAPP"
+      }
+    ],
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [
         {
           "target": "dmg",
           "arch": [
-            "x64",
-            "arm64"
+            "universal"
           ]
         }
       ],
       "icon": "zyron-icon.icns",
       "gatekeeperAssess": false,
-      "hardenedRuntime": true,
+      "hardenedRuntime": false,
       "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist"
+      "entitlementsInherit": "entitlements.mac.plist",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "dmg": {
+      "title": "${productName} ${version}",
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
     }
   }
 }

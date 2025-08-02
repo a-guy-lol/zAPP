@@ -1,37 +1,48 @@
 {
-  "latestVersion": "1.1.1",
+  "latestVersion": "1.1.2",
   "changelogs": [
+    {
+      "version": "1.1.2",
+      "date": "2025-08-01",
+      "changes": [
+        "Added auto-updater - app now updates itself automatically",
+        "New one-line installer that actually works without needing developer tools",
+        "Fixed icon not showing up properly",
+        "Made releases way easier - just run one command",
+        "App now checks for updates when you start it"
+      ]
+    },
     {
       "version": "1.1.1",
       "date": "2025-07-31",
       "changes": [
-        "Fixed Discord RPC functionality to properly display current script name.",
-        "Fixed rename button in settings - now opens modal instead of broken prompt.",
-        "Removed opacity slider from settings as requested.",
-        "Discord RPC now correctly shows 'Script 1.lua' format for current tab.",
-        "Improved Discord RPC connection stability."
+        "Fixed Discord status not showing the right script name",
+        "Fixed rename button - it actually opens a popup now instead of being broken",
+        "Removed that annoying opacity slider",
+        "Discord now shows 'Script 1.lua' like it should",
+        "Discord connection is more stable now"
       ]
     },
     {
       "version": "1.1.0",
       "date": "2025-07-31",
       "changes": [
-        "Added 'About' tab with application info and changelog.",
-        "Added settings for opacity, Discord RPC, and notifications.",
-        "Added 'Clear App Data' functionality.",
-        "Increased max tabs limit to 30 and added notification for limit.",
-        "Fixed user renaming bug.",
-        "UI/UX improvements and sectioning in Settings."
+        "Added About tab so you can see app info and updates",
+        "Added settings for Discord, opacity, and notifications",
+        "You can now clear all your app data if you want",
+        "Raised tab limit to 30 (was way too low before)",
+        "Fixed bug where you couldn't rename your user",
+        "Made the settings look better"
       ]
     },
     {
       "version": "1.0.0",
       "date": "2025-07-30",
       "changes": [
-        "Initial release of Zyron UI.",
-        "Core script editing and execution functionality.",
-        "Tab management system.",
-        "Glassmorphism UI with performance mode."
+        "First version of Zyron",
+        "Basic script editing and running scripts",
+        "Tab system for multiple scripts",
+        "Cool glass-like UI with performance mode"
       ]
     }
   ]
