@@ -23,14 +23,9 @@ If you prefer manual installation, download the latest release:\
 
 **Warning: This method is not recommended as they are not verified**
 
-**For Apple Silicon (M1/M2/M3):**
-- Download the ARM64 DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
+**For Intel Macs and Apple Silicon (M1/M2/M3):**
+- Download the universal DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
 
-**For Intel Macs:**
-- Download the x64 DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
-
-**Universal Build:**
-- Download the Universal DMG (works on both architectures)
 
 ## 📸 Screenshots
 
