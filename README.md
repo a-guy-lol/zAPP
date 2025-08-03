@@ -33,16 +33,14 @@ If you prefer manual installation, download the latest release:\
 - Download the Universal DMG (works on both architectures)
 
 ## 📸 Screenshots
-## 📸 Screenshots
 
 | Set your name! | Edit/Save Scripts! |
-| ------------ | ------------ |
-| ![image](https://github.com/user-attachments/assets/bb35d993-5e4a-4b75-ad00-4cdc3316feac) | ![image](https://github.com/user-attachments/assets/33fb5d23-04d4-4576-ba1e-bb4acf58c2c5) |
+| ------------- | ------------------ |
+| <img src="https://github.com/user-attachments/assets/bb35d993-5e4a-4b75-ad00-4cdc3316feac" width="1000"/> | <img src="https://github.com/user-attachments/assets/33fb5d23-04d4-4576-ba1e-bb4acf58c2c5" width="1000"/> |
 
 | Explore our handpicked scripts! | Customize app settings! |
-| ------------ | ------------ |
-| ![image](https://github.com/user-attachments/assets/9ce6b606-9fc3-4ee1-8416-f95177def6bb) | ![image](https://github.com/user-attachments/assets/cc665bd5-a0b5-4f8f-a2b2-f11cd644c4ff) |
-
+| ------------- | ------------------ |
+| <img src="https://github.com/user-attachments/assets/9ce6b606-9fc3-4ee1-8416-f95177def6bb" width="1000"/> | <img src="https://github.com/user-attachments/assets/cc665bd5-a0b5-4f8f-a2b2-f11cd644c4ff" width="1000"/> |
 
 
 # How to Build Locally (for Developers)
