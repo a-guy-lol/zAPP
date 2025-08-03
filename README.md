@@ -1,13 +1,13 @@
-# 🚀 Zyron Script Editor
+# 🔲 Zyron Script Editor
 
 Formerly known as **ZexonUI**, **Zyron** is a sleek, modern script editor that connects with **[Hydrogen](https://hydrogen.lat)** to help you run your scripts seamlessly.
 
 ## ✨ Features
 
 - 🖥️ **Universal Support**: Works on both Apple Silicon (M1/M2/M3) and Intel Macs
-- 🔗 **Hydrogen Integration**: Direct connection to Hydrogen for script execution
+- ⛓️‍💥 **Hydrogen Integration**: Direct connection to Hydrogen for script execution
 - 🎨 **Modern UI**: Clean, intuitive interface designed for productivity
-- 🚀 **Easy Installation**: One-command installation with no dependencies required
+- 🧱 **Easy Installation**: One-command installation with no dependencies required
 
 ## 📦 Quick Installation
 
@@ -17,16 +17,11 @@ Formerly known as **ZexonUI**, **Zyron** is a sleek, modern script editor that c
 curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/install.sh" | bash
 ```
 
-This installer:
-- ✅ **No developer tools required** (no Xcode, Homebrew, or Node.js needed)
-- ✅ **Automatic architecture detection** (Intel/Apple Silicon)
-- ✅ **Direct download** from GitHub releases
-- ✅ **No security warnings** (removes quarantine flags automatically)
-- ✅ **Auto-launch** after installation
-
 ## 🔧 Manual Installation
 
-If you prefer manual installation, download the latest release:
+If you prefer manual installation, download the latest release:\
+
+**Warning: This method is not recommended as they are not verified**
 
 **For Apple Silicon (M1/M2/M3):**
 - Download the ARM64 DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
@@ -38,10 +33,17 @@ If you prefer manual installation, download the latest release:
 - Download the Universal DMG (works on both architectures)
 
 ## 📸 Screenshots
+## 📸 Screenshots
 
-![Zyron 2025-07-31 09 55 26](https://github.com/user-attachments/assets/d0947590-d8e2-4fa8-8aea-9d3c2a6565ab)
-![System Settings 2025-07-31 09 54 53](https://github.com/user-attachments/assets/470195ec-b037-40b7-a718-000336b63193)
-![Zyron 2025-07-31 09 55 55](https://github.com/user-attachments/assets/70308b3c-f9e0-43a9-8e1a-6baed3ef5659)
+| Set your name! | Edit/Save Scripts! |
+| ------------ | ------------ |
+| ![image](https://github.com/user-attachments/assets/bb35d993-5e4a-4b75-ad00-4cdc3316feac) | ![image](https://github.com/user-attachments/assets/33fb5d23-04d4-4576-ba1e-bb4acf58c2c5) |
+
+| Explore our handpicked scripts! | Customize app settings! |
+| ------------ | ------------ |
+| ![image](https://github.com/user-attachments/assets/9ce6b606-9fc3-4ee1-8416-f95177def6bb) | ![image](https://github.com/user-attachments/assets/cc665bd5-a0b5-4f8f-a2b2-f11cd644c4ff) |
+
+
 
 # How to Build Locally (for Developers)
 If you want to edit the code or change the app then:
