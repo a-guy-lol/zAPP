@@ -4,483 +4,7 @@
     <meta charset="UTF-8">
     <title>Zyron Editor</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
-        :root {
-            --bg-main: #000;
-            --bg-secondary: rgba(20, 20, 20, 0.8);
-            --border-color: rgba(255, 255, 255, 0.1);
-            --text-main: #e5e7eb;
-            --text-muted: #9ca3af;
-            --accent-color: #fff;
-            --active-tab-bg: rgba(255, 255, 255, 0.1);
-            --green-status: #2ecc71;
-            --red-status: #e74c3c;
-            --tab-bg: rgba(255, 255, 255, 0.05);
-        }
-        body {
-            margin: 0;
-            padding: 0;
-            height: 100vh;
-            background-color: transparent; /* Changed */
-            overflow: hidden;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-            color: var(--text-main);
-        }
-
-        /* Performance Mode Adjustments */
-        body.performance-mode * {
-            transition: none !important;
-            animation: none !important;
-        }
-
-
-        #app-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            z-index: 1;
-            background: rgba(10, 10, 10, 0.92); /* Less transparent */
-            backdrop-filter: blur(20px);
-            overflow: hidden;
-        }
-
-        #title-bar {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 10px 15px;
-            height: 40px;
-            flex-shrink: 0;
-            user-select: none;
-            -webkit-app-region: drag;
-            position: relative;
-            z-index: 10;
-            border-bottom: 1px solid var(--border-color);
-        }
-        #title-label {
-            font-size: 24px;
-            font-weight: 900;
-            color: white;
-            letter-spacing: 1px;
-            text-shadow: 0 0 10px rgba(255,255,255,0.3);
-        }
-        #title-bar-buttons {
-            -webkit-app-region: no-drag;
-            display: flex;
-            gap: 8px;
-        }
-        .title-bar-btn {
-            background-color: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            font-weight: bold;
-            font-size: 12px;
-            width: 25px;
-            height: 25px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .title-bar-btn:hover { background-color: rgba(255, 255, 255, 0.2); }
-
-        .hidden { display: none !important; }
-
-        #login-view {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            width: 100%;
-        }
-        #login-card {
-            background: transparent;
-            padding: 40px;
-            border-radius: 10px;
-            text-align: center;
-            color: white;
-            width: 400px;
-            box-shadow: none;
-        }
-        #login-card h1 { font-size: 36px; margin-bottom: 20px; color: white; }
-        #login-card p { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; }
-        .form-input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
-            padding: 15px;
-            border-radius: 5px;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        .form-input:focus { outline: none; border-color: white; }
-        .btn {
-            background: white;
-            color: black;
-            border: none;
-            padding: 15px 30px;
-            font-size: 18px;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-            transition: background 0.2s;
-        }
-        .btn:hover { background: rgba(255, 255, 255, 0.8); }
-        .links { margin-top: 20px; }
-        .links a { color: white; text-decoration: underline; }
-
-        #main-app-view {
-            display: flex;
-            flex-direction: column;
-            flex-grow: 1;
-            overflow: hidden;
-        }
-        #main-content {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column; /* Changed to column */
-            overflow: hidden;
-            padding: 0 20px 20px;
-        }
-        #main-nav {
-            padding: 10px 20px; /* Adjusted padding */
-            display: flex;
-            justify-content: flex-start; /* Changed */
-            align-items: center;
-            gap: 10px;
-            flex-shrink: 0;
-        }
-        .main-nav-btn {
-            color: var(--text-muted);
-            text-decoration: none;
-            font-size: 16px;
-            padding: 5px 15px;
-            position: relative;
-            transition: color 0.3s ease, background-color 0.3s ease;
-            background: var(--tab-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            cursor: pointer;
-            font-family: 'Inter', sans-serif;
-        }
-        .main-nav-btn:hover { color: white; background-color: rgba(255,255,255,0.1); }
-        .main-nav-btn.active {
-            color: white;
-            background-color: rgba(255,255,255,0.15);
-        }
-
-        .content-pane {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column; /* Changed */
-            overflow: hidden;
-            border-radius: 10px;
-            background: rgba(0,0,0,0.2); /* Added background */
-        }
-        
-        #script-tab-container {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            flex-shrink: 0;
-            gap: 0.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        #script-tab-bar {
-            display: flex;
-            flex-grow: 1;
-            gap: 0.5rem;
-            overflow-x: auto;
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-        }
-        #script-tab-bar::-webkit-scrollbar {
-            display: none; /* Chrome, Safari, Opera */
-        }
-
-        .script-tab {
-            padding: 0.5rem 1.5rem; /* Adjusted padding */
-            cursor: pointer;
-            background-color: var(--tab-bg);
-            border: 1px solid var(--border-color);
-            color: var(--text-muted);
-            border-radius: 6px;
-            transition: all 0.2s ease;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-shrink: 0; /* Prevent tabs from shrinking */
-        }
-        .script-tab.dragging {
-            opacity: 0.5;
-        }
-        .script-tab:hover { background-color: rgba(255, 255, 255, 0.1); color: var(--text-main); }
-        .script-tab.active {
-            background-color: var(--active-tab-bg);
-            color: var(--text-main);
-            font-weight: 600;
-        }
-        .tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .close-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem; opacity: 0.6; padding: 0; line-height: 1; }
-        .close-btn:hover { opacity: 1; }
-        #new-tab-btn {
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1.5rem;
-            line-height: 1;
-            flex-shrink: 0;
-        }
-        #new-tab-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
-
-        #script-search-box {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            color: var(--text-main);
-            padding: 8px 12px;
-            border-radius: 6px;
-            margin-left: auto; /* Pushes to the right */
-            width: 200px;
-        }
-        #script-search-box:focus {
-            outline: none;
-            border-color: var(--accent-color);
-        }
-
-
-        #editor-area { flex-grow: 1; position: relative; border-radius: 10px; }
-        .editor-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
-        .ace_editor, .ace_editor .ace_gutter { background-color: transparent !important; }
-        
-        #settings-pane { padding: 2rem; overflow-y: auto; }
-        .settings-section {
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: rgba(0,0,0,0.2);
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-        }
-        .settings-section h2 {
-            margin-top: 0;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.75rem;
-            margin-bottom: 1.5rem;
-        }
-        .setting-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            margin-bottom: 1rem;
-        }
-        .setting-item label {
-            font-weight: 500;
-        }
-        .btn-danger { background: #a02d2d; color: white; }
-        .btn-danger:hover { background: #c0392b; }
-
-        /* Custom Toggle Switch */
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 50px;
-            height: 28px;
-        }
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(255,255,255,0.2);
-            transition: .4s;
-            border-radius: 28px;
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 20px;
-            width: 20px;
-            left: 4px;
-            bottom: 4px;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 50%;
-        }
-        input:checked + .slider {
-            background-color: var(--accent-color);
-        }
-        input:checked + .slider:before {
-            transform: translateX(22px);
-            background-color: #111;
-        }
-
-        #about-pane {
-            padding: 2rem;
-            overflow-y: auto;
-            color: var(--text-main);
-        }
-        #about-pane img {
-            width: 128px;
-            height: 128px;
-            border-radius: 50%;
-            display: block;
-            margin: 0 auto 1.5rem;
-            border: 2px solid var(--border-color);
-        }
-        #about-pane h1, #about-pane h2 {
-            text-align: center;
-        }
-        .changelog-entry {
-            background: rgba(0,0,0,0.2);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-        }
-        .changelog-entry h3 {
-            margin-top: 0;
-        }
-        .changelog-entry ul {
-            padding-left: 20px;
-            margin-bottom: 0;
-        }
-
-        #bottom-bar {
-            flex-shrink: 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.75rem 20px;
-            border-top: 1px solid var(--border-color);
-            background: rgba(0,0,0,0.3);
-        }
-        #connection-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-        }
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-        }
-        .status-indicator.connected { background-color: var(--green-status); box-shadow: 0 0 8px var(--green-status); }
-        .status-indicator.disconnected { background-color: var(--red-status); box-shadow: 0 0 8px var(--red-status); }
-
-        #user-display {
-            font-size: 14px;
-            color: var(--text-muted);
-        }
-
-        #execute-btn {
-            background: white;
-            color: black;
-            border: none;
-            padding: 10px 25px;
-            font-size: 16px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        #execute-btn:hover:not(:disabled) {
-            background: #ddd;
-            box-shadow: 0 0 10px rgba(255,255,255,0.5);
-        }
-        #execute-btn:disabled { background: #888; cursor: not-allowed; }
-
-        #context-menu {
-            position: fixed;
-            z-index: 1000;
-            width: 180px;
-            background: #111;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            padding: 0.5rem;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-        .context-menu-item {
-            background: none;
-            border: none;
-            color: var(--text-main);
-            display: block;
-            width: 100%;
-            text-align: left;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        .context-menu-item:hover { background-color: rgba(255, 255, 255, 0.1); }
-
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: rgba(0,0,0,0.7);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-        .modal-content {
-            background: #111;
-            border: 1px solid var(--border-color);
-            padding: 2rem;
-            border-radius: 0.5rem;
-            width: 90%;
-            max-width: 400px;
-            text-align: center;
-        }
-        .modal-actions { display: flex; justify-content: center; gap: 1rem; margin-top: 1.5rem; }
-
-        #notification-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 3000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .notification {
-            background: rgba(30, 30, 30, 0.9);
-            backdrop-filter: blur(10px);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-            opacity: 0;
-            transform: translateX(100%);
-            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-        .notification.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-        .notification.error {
-            background: rgba(192, 57, 43, 0.9);
-            border-color: #c0392b;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div id="app-wrapper">
@@ -505,12 +29,25 @@
 
         <div id="main-app-view" class="hidden">
             <nav id="main-nav">
-                <button id="nav-scripts-btn" class="main-nav-btn active">Scripts</button>
-                <button id="nav-settings-btn" class="main-nav-btn">Settings</button>
-                <button id="nav-about-btn" class="main-nav-btn">About</button>
+                <button id="nav-editor-btn" class="main-nav-btn active" title="Editor">
+                    <img src="assets/images/editIcon.png" alt="Editor" class="nav-icon">
+                    <span class="nav-label">Editor</span>
+                </button>
+                <button id="nav-scripts-btn" class="main-nav-btn" title="Scripts">
+                    <img src="assets/images/scriptsIcon.png" alt="Scripts" class="nav-icon">
+                    <span class="nav-label">Scripts</span>
+                </button>
+                <button id="nav-settings-btn" class="main-nav-btn" title="Settings">
+                    <img src="assets/images/settingsIcon.png" alt="Settings" class="nav-icon">
+                    <span class="nav-label">Settings</span>
+                </button>
+                <button id="nav-about-btn" class="main-nav-btn" title="About">
+                    <img src="assets/images/aboutIcon.png" alt="About" class="nav-icon">
+                    <span class="nav-label">About</span>
+                </button>
             </nav>
             <div id="main-content">
-                <div id="scripts-pane" class="content-pane">
+                <div id="editor-pane" class="content-pane">
                     <div id="script-tab-container">
                         <div id="script-tab-bar">
                             <!-- Script tabs will be inserted here by JS -->
@@ -520,12 +57,24 @@
                     </div>
                     <div id="editor-area"></div>
                 </div>
+                <div id="scripts-pane" class="content-pane hidden">
+                    <div class="scripts-header">
+                        <h1>Here are scripts we recommend!</h1>
+                        <input type="text" id="script-hub-search" placeholder="Search scripts...">
+                    </div>
+                    <div id="script-cards-container">
+                        <!-- Script cards will be loaded here -->
+                    </div>
+                </div>
                 <div id="settings-pane" class="content-pane hidden">
                     <div style="width: 100%; max-width: 800px; margin: 0 auto; padding: 1rem;">
                         <div class="settings-section">
                             <h2>Visuals</h2>
                             <div class="setting-item">
-                                <h3>Performance Mode</h3>
+                                <div class="setting-info">
+                                    <h3>Performance Mode</h3>
+                                    <p class="setting-description">Disables animations and transitions to improve performance on slower devices</p>
+                                </div>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="performance-mode-toggle">
                                     <span class="slider"></span>
@@ -536,21 +85,30 @@
                         <div class="settings-section">
                             <h2>Functionality</h2>
                             <div class="setting-item">
-                                <h3>Auto Save</h3>
+                                <div class="setting-info">
+                                    <h3>Auto Save</h3>
+                                    <p class="setting-description">Automatically saves your scripts every 30 seconds</p>
+                                </div>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="auto-save-toggle" checked>
                                     <span class="slider"></span>
                                 </label>
                             </div>
                             <div class="setting-item">
-                                <h3>Discord Rich Presence</h3>
+                                <div class="setting-info">
+                                    <h3>Discord Rich Presence</h3>
+                                    <p class="setting-description">Shows your Zyron activity status on Discord</p>
+                                </div>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="discord-rpc-toggle">
                                     <span class="slider"></span>
                                 </label>
                             </div>
                             <div class="setting-item">
-                                <h3>Enable Notifications</h3>
+                                <div class="setting-info">
+                                    <h3>Enable Notifications</h3>
+                                    <p class="setting-description">Shows popup notifications for script execution and app events</p>
+                                </div>
                                 <label class="toggle-switch">
                                     <input type="checkbox" id="notifications-toggle" checked>
                                     <span class="slider"></span>
@@ -561,11 +119,17 @@
                         <div class="settings-section">
                             <h2>Account & Data</h2>
                             <div class="setting-item">
-                                <h3>Change Name</h3>
+                                <div class="setting-info">
+                                    <h3>Change Name</h3>
+                                    <p class="setting-description">Update your display name shown in the app</p>
+                                </div>
                                 <button id="rename-user-btn" class="btn">Rename</button>
                             </div>
                              <div class="setting-item">
-                                <h3>Clear App Data</h3>
+                                <div class="setting-info">
+                                    <h3>Clear App Data</h3>
+                                    <p class="setting-description">Permanently delete all scripts, settings, and user data</p>
+                                </div>
                                 <button id="clear-data-btn" class="btn btn-danger">Clear Data</button>
                             </div>
                         </div>
@@ -621,542 +185,29 @@
 
     <div id="notification-container"></div>
 
+    <!-- Update Modal -->
+    <div id="update-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content update-modal">
+            <h2>Update Available</h2>
+            <p id="update-modal-text">A new version of Zyron is available. Would you like to install it now?</p>
+            <div class="update-progress hidden" id="update-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+                <p id="progress-text">Downloading update...</p>
+            </div>
+            <div class="modal-actions" id="update-modal-actions">
+                <button id="update-modal-no" class="btn btn-secondary">Not Now</button>
+                <button id="update-modal-yes" class="btn btn-primary">Install Update</button>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-chaos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-twilight.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-lua.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
-    <script>
-    document.body.addEventListener('click', function(event) {
-        // Prevent click effect when interacting with UI elements
-        if (document.body.classList.contains('performance-mode')) return;
-        if (event.target.closest('button, a, input, .script-tab, .context-menu-item')) {
-            return;
-        }
-        const particle = document.createElement('div');
-        particle.classList.add('click-effect');
-        const size = Math.random() * 4 + 2;
-        particle.style.width = `${size}px`;
-        particle.style.height = `${size}px`;
-        particle.style.left = `${event.clientX - size / 2}px`;
-        particle.style.top = `${event.clientY - size / 2}px`;
-        document.body.appendChild(particle);
-        setTimeout(() => { particle.remove(); }, 600);
-    });
-    
-    document.addEventListener('DOMContentLoaded', () => {
-        const loginView = document.getElementById('login-view');
-        const mainAppView = document.getElementById('main-app-view');
-        const loginForm = document.getElementById('login-form');
-        const usernameInput = document.getElementById('username-input');
-        const navScriptsBtn = document.getElementById('nav-scripts-btn');
-        const navSettingsBtn = document.getElementById('nav-settings-btn');
-        const navAboutBtn = document.getElementById('nav-about-btn');
-        const scriptsPane = document.getElementById('scripts-pane');
-        const settingsPane = document.getElementById('settings-pane');
-        const aboutPane = document.getElementById('about-pane');
-        const scriptTabBar = document.getElementById('script-tab-bar');
-        const newTabBtn = document.getElementById('new-tab-btn');
-        const editorArea = document.getElementById('editor-area');
-        const executeBtn = document.getElementById('execute-btn');
-        const contextMenu = document.getElementById('context-menu');
-        const autoSaveToggle = document.getElementById('auto-save-toggle');
-        const performanceModeToggle = document.getElementById('performance-mode-toggle');
-        const discordRpcToggle = document.getElementById('discord-rpc-toggle');
-        const notificationsToggle = document.getElementById('notifications-toggle');
-        const renameUserBtn = document.getElementById('rename-user-btn');
-        const clearDataBtn = document.getElementById('clear-data-btn');
-        const renameModalOverlay = document.getElementById('rename-modal-overlay');
-        const renameModalInput = document.getElementById('rename-modal-input');
-        const renameModalSaveBtn = document.getElementById('rename-modal-save');
-        const renameModalCancelBtn = document.getElementById('rename-modal-cancel');
-        const connectionStatusIndicator = document.getElementById('status-indicator');
-        const connectionStatusText = document.getElementById('status-text');
-        const userDisplay = document.getElementById('user-display');
-        const scriptSearchBox = document.getElementById('script-search-box');
-        const confirmModalOverlay = document.getElementById('confirm-modal-overlay');
-
-        let TABS_DATA = [];
-        let activeTabId = null;
-        let activeContextMenuTabId = null;
-        const MAX_TABS = 30;
-        const editors = {};
-        let autoSaveInterval = null;
-        let connectionCheckInterval = null;
-        let notificationsEnabled = true;
-
-        async function saveState() {
-            if (TABS_DATA) {
-                await window.electronAPI.saveState(TABS_DATA);
-            }
-        }
-
-        function initApp() {
-            const username = localStorage.getItem('zyronUsername');
-            if (username) {
-                showMainApp(username);
-            } else {
-                showLogin();
-            }
-            
-            // Load settings
-            const perfModeEnabled = localStorage.getItem('zyronPerfMode') === 'true';
-            performanceModeToggle.checked = perfModeEnabled;
-            if (perfModeEnabled) document.body.classList.add('performance-mode');
-
-            notificationsEnabled = localStorage.getItem('zyronNotifications') !== 'false';
-            notificationsToggle.checked = notificationsEnabled;
-
-            window.electronAPI.getDiscordRpcStatus().then(isEnabled => {
-                discordRpcToggle.checked = isEnabled;
-            });
-
-
-            document.getElementById('minimize-btn').addEventListener('click', () => window.electronAPI.minimizeWindow());
-            document.getElementById('close-btn').addEventListener('click', () => window.electronAPI.closeWindow());
-            loginForm.addEventListener('submit', handleLogin);
-            navScriptsBtn.addEventListener('click', () => switchMainView('scripts'));
-            navSettingsBtn.addEventListener('click', () => switchMainView('settings'));
-            navAboutBtn.addEventListener('click', () => switchMainView('about'));
-            newTabBtn.addEventListener('click', createNewTab);
-            executeBtn.addEventListener('click', executeScript);
-            renameUserBtn.addEventListener('click', handleRenameUser);
-            clearDataBtn.addEventListener('click', () => {
-                showConfirmationModal(
-                    'Clear All App Data?',
-                    'This will delete all of your scripts and settings. This action cannot be undone.',
-                    confirmClearData
-                );
-            });
-            scriptSearchBox.addEventListener('input', filterTabs);
-            
-            contextMenu.addEventListener('click', handleContextMenuClick);
-            document.addEventListener('click', (e) => {
-                if (!contextMenu.contains(e.target)) {
-                    contextMenu.classList.add('hidden');
-                }
-            });
-            
-            renameModalCancelBtn.addEventListener('click', () => renameModalOverlay.classList.add('hidden'));
-            renameModalSaveBtn.addEventListener('click', saveTabRename);
-            renameModalInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') saveTabRename();
-                if (e.key === 'Escape') renameModalOverlay.classList.add('hidden');
-            });
-
-            autoSaveToggle.addEventListener('change', setupAutoSave);
-            performanceModeToggle.addEventListener('change', togglePerformanceMode);
-            notificationsToggle.addEventListener('change', toggleNotifications);
-            discordRpcToggle.addEventListener('change', toggleDiscordRpc);
-
-            window.electronAPI.onRequestFinalSave(async () => {
-                await saveState();
-                window.electronAPI.notifyFinalSaveComplete();
-            });
-        }
-
-        function showLogin() {
-            loginView.classList.remove('hidden');
-            mainAppView.classList.add('hidden');
-        }
-
-        async function showMainApp(username) {
-            loginView.classList.add('hidden');
-            mainAppView.classList.remove('hidden');
-            userDisplay.textContent = `Welcome, ${username}`;
-            
-            await loadState();
-            await loadChangelog();
-            checkConnection();
-            if (connectionCheckInterval) clearInterval(connectionCheckInterval);
-            connectionCheckInterval = setInterval(checkConnection, 3000);
-            setupAutoSave();
-        }
-
-        async function handleLogin(event) {
-            event.preventDefault();
-            const username = usernameInput.value.trim();
-            if (username) {
-                localStorage.setItem('zyronUsername', username);
-                showMainApp(username);
-            }
-        }
-        
-        function handleRenameUser() {
-            document.getElementById('rename-modal-title').textContent = 'Change Name';
-            renameModalInput.value = localStorage.getItem('zyronUsername') || '';
-            renameModalOverlay.classList.remove('hidden');
-            renameModalInput.focus();
-        }
-
-        function switchMainView(viewName) {
-            scriptsPane.classList.add('hidden');
-            settingsPane.classList.add('hidden');
-            aboutPane.classList.add('hidden');
-            
-            navScriptsBtn.classList.remove('active');
-            navSettingsBtn.classList.remove('active');
-            navAboutBtn.classList.remove('active');
-
-            if (viewName === 'scripts') {
-                scriptsPane.classList.remove('hidden');
-                navScriptsBtn.classList.add('active');
-                Object.values(editors).forEach(editor => editor.resize());
-            } else if (viewName === 'settings') {
-                settingsPane.classList.remove('hidden');
-                navSettingsBtn.classList.add('active');
-            } else if (viewName === 'about') {
-                aboutPane.classList.remove('hidden');
-                navAboutBtn.classList.add('active');
-            }
-        }
-
-        async function loadState() {
-            const result = await window.electronAPI.loadState();
-            if (result.success && result.data && Array.isArray(result.data) && result.data.length > 0) {
-                TABS_DATA = result.data;
-            } else {
-                TABS_DATA = [{ id: `tab-${Date.now()}`, name: 'Script 1', content: '-- Welcome to Zyron!' }];
-            }
-            renderAllTabs();
-            if (TABS_DATA.length > 0) {
-                 const lastActiveTab = TABS_DATA.find(t => t.id === localStorage.getItem('zyronLastActiveTab'));
-                 switchTab(lastActiveTab ? lastActiveTab.id : TABS_DATA[0].id);
-            }
-        }
-        
-        function setupAutoSave() {
-            if (autoSaveInterval) clearInterval(autoSaveInterval);
-            if (autoSaveToggle.checked) {
-                autoSaveInterval = setInterval(saveState, 30000);
-            }
-        }
-
-        function togglePerformanceMode() {
-            const enabled = performanceModeToggle.checked;
-            localStorage.setItem('zyronPerfMode', enabled);
-            if (enabled) {
-                document.body.classList.add('performance-mode');
-            } else {
-                document.body.classList.remove('performance-mode');
-            }
-        }
-
-        function toggleNotifications() {
-            notificationsEnabled = notificationsToggle.checked;
-            localStorage.setItem('zyronNotifications', notificationsEnabled);
-        }
-
-        function toggleDiscordRpc() {
-            const isEnabled = discordRpcToggle.checked;
-            window.electronAPI.toggleDiscordRpc(isEnabled);
-        }
-
-        function renderAllTabs() {
-            // Clear existing tabs except for the new tab button
-            const existingTabs = scriptTabBar.querySelectorAll('.script-tab');
-            existingTabs.forEach(t => t.remove());
-            TABS_DATA.forEach(tab => createTabElement(tab.id, tab.name));
-        }
-
-        function createTabElement(id, name) {
-            const tabEl = document.createElement('div');
-            tabEl.id = id;
-            tabEl.className = 'script-tab';
-            tabEl.draggable = true;
-            tabEl.innerHTML = `<span class="tab-name">${name}</span><button class="close-btn">&times;</button>`;
-            scriptTabBar.appendChild(tabEl);
-
-            tabEl.addEventListener('click', (e) => {
-                if (e.target.classList.contains('close-btn')) return;
-                switchTab(id);
-            });
-            tabEl.querySelector('.close-btn').addEventListener('click', e => { e.stopPropagation(); closeTab(id); });
-            tabEl.addEventListener('contextmenu', e => { e.preventDefault(); e.stopPropagation(); showContextMenu(e, id); });
-
-            // Drag and Drop listeners
-            tabEl.addEventListener('dragstart', e => {
-                e.dataTransfer.setData('text/plain', id);
-                setTimeout(() => tabEl.classList.add('dragging'), 0);
-            });
-            tabEl.addEventListener('dragend', () => tabEl.classList.remove('dragging'));
-            tabEl.addEventListener('dragover', e => {
-                e.preventDefault();
-                const draggingEl = document.querySelector('.dragging');
-                if (draggingEl !== tabEl) {
-                    const rect = tabEl.getBoundingClientRect();
-                    const nextSibling = (e.clientX - rect.left) > (rect.width / 2) ? tabEl.nextSibling : tabEl;
-                    scriptTabBar.insertBefore(draggingEl, nextSibling);
-                }
-            });
-        }
-
-        scriptTabBar.addEventListener('drop', e => {
-            e.preventDefault();
-            const draggedId = e.dataTransfer.getData('text/plain');
-            const draggedEl = document.getElementById(draggedId);
-            draggedEl.classList.remove('dragging');
-
-            const newOrder = Array.from(scriptTabBar.querySelectorAll('.script-tab')).map(t => t.id);
-            TABS_DATA.sort((a, b) => newOrder.indexOf(a.id) - newOrder.indexOf(b.id));
-            saveState();
-        });
-
-        function createEditorElement(id, content) {
-            const editorContainer = document.createElement('div');
-            editorContainer.id = `editor-${id}`;
-            editorContainer.className = 'editor-container hidden';
-            editorArea.appendChild(editorContainer);
-
-            const editor = ace.edit(editorContainer);
-            editor.session.setMode("ace/mode/lua");
-            editor.setTheme("ace/theme/chaos");
-            editor.session.setValue(content || "");
-            editor.setOptions({
-                showPrintMargin: false,
-                fontSize: "14px",
-                enableBasicAutocompletion: true,
-                enableLiveAutocompletion: true,
-                enableSnippets: true
-            });
-
-            editor.session.on('change', () => {
-                const tab = TABS_DATA.find(t => t.id === id);
-                if (tab) tab.content = editor.session.getValue();
-            });
-            editors[id] = editor;
-        }
-
-        function switchTab(id) {
-            if (activeTabId === id) return;
-
-            if (activeTabId) {
-                document.getElementById(activeTabId)?.classList.remove('active');
-                document.getElementById(`editor-${activeTabId}`)?.classList.add('hidden');
-            }
-            activeTabId = id;
-            localStorage.setItem('zyronLastActiveTab', id);
-            document.getElementById(id)?.classList.add('active');
-            
-            // Update Discord RPC with current script name
-            const currentTab = TABS_DATA.find(t => t.id === id);
-            if (currentTab) {
-                window.electronAPI.updateActiveScriptName(currentTab.name);
-            }
-            
-            let editorContainer = document.getElementById(`editor-${id}`);
-            if (!editorContainer) {
-                const tab = TABS_DATA.find(t => t.id === id);
-                if (tab) createEditorElement(tab.id, tab.content);
-                editorContainer = document.getElementById(`editor-${id}`);
-            }
-            if (editorContainer) {
-                editorContainer.classList.remove('hidden');
-                editors[id]?.resize();
-                editors[id]?.focus();
-            }
-        }
-
-        function createNewTab() {
-            if (TABS_DATA.length >= MAX_TABS) {
-                showNotification(`You have reached the maximum of ${MAX_TABS} tabs.`, 'error');
-                return;
-            }
-            const newId = `tab-${Date.now()}`;
-            const newName = `Script ${TABS_DATA.length + 1}`;
-            TABS_DATA.push({ id: newId, name: newName, content: '' });
-            createTabElement(newId, newName);
-            switchTab(newId);
-            saveState();
-        }
-
-        function closeTab(id) {
-            const index = TABS_DATA.findIndex(t => t.id === id);
-            if (index === -1) return;
-            TABS_DATA.splice(index, 1);
-            editors[id]?.destroy();
-            delete editors[id];
-            document.getElementById(id)?.remove();
-            const editorContainer = document.getElementById(`editor-${id}`);
-            if(editorContainer) editorContainer.remove();
-
-            if (activeTabId === id) {
-                const newIndex = Math.max(0, index - 1);
-                const newActiveId = TABS_DATA.length > 0 ? TABS_DATA[newIndex].id : null;
-                switchTab(newActiveId);
-            }
-            saveState();
-        }
-
-        function showContextMenu(event, tabId) {
-            activeContextMenuTabId = tabId;
-            contextMenu.style.top = `${event.clientY}px`;
-            contextMenu.style.left = `${event.clientX}px`;
-            contextMenu.classList.remove('hidden');
-        }
-        
-        function handleContextMenuClick(event) {
-            if (!activeContextMenuTabId) return;
-            const action = event.target.id;
-            if (action === 'rename-tab-btn') {
-                const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
-                if(tab) {
-                    document.getElementById('rename-modal-title').textContent = 'Rename Tab';
-                    renameModalInput.value = tab.name;
-                    renameModalOverlay.classList.remove('hidden');
-                    renameModalInput.focus();
-                }
-            }
-            contextMenu.classList.add('hidden');
-        }
-
-        function saveTabRename() {
-            const newName = renameModalInput.value.trim();
-            if (newName && activeContextMenuTabId) {
-                const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
-                if (tab) {
-                    tab.name = newName;
-                    document.querySelector(`#${activeContextMenuTabId} .tab-name`).textContent = tab.name;
-                    saveState();
-                }
-            } else if (newName && !activeContextMenuTabId) {
-                // This is for renaming the user
-                localStorage.setItem('zyronUsername', newName);
-                userDisplay.textContent = `Welcome, ${newName}`;
-                showNotification('Name changed successfully!');
-            }
-            renameModalOverlay.classList.add('hidden');
-            activeContextMenuTabId = null; // Reset context
-        }
-
-        async function executeScript() {
-            const scriptContent = editors[activeTabId]?.session.getValue();
-            if (!scriptContent) return;
-            executeBtn.textContent = 'Executing...';
-            executeBtn.disabled = true;
-            try {
-                const result = await window.electronAPI.executeScript(scriptContent);
-                if (result.success) {
-                    showNotification('Script executed successfully!');
-                } else {
-                    showNotification(`Execution failed: ${result.message}`, 'error');
-                }
-            } catch(e) {
-                showNotification(`Execution error: ${e.message}`, 'error');
-            }
-            finally {
-                executeBtn.textContent = 'Execute';
-                checkConnection();
-            }
-        }
-
-        async function checkConnection() {
-            const isConnected = await window.electronAPI.checkConnection();
-            executeBtn.disabled = !isConnected;
-            if (isConnected) {
-                connectionStatusIndicator.classList.remove('disconnected');
-                connectionStatusIndicator.classList.add('connected');
-                connectionStatusText.textContent = 'Connected';
-            } else {
-                connectionStatusIndicator.classList.remove('connected');
-                connectionStatusIndicator.classList.add('disconnected');
-                connectionStatusText.textContent = 'Disconnected';
-            }
-        }
-
-        function filterTabs() {
-            const query = scriptSearchBox.value.toLowerCase();
-            const tabs = scriptTabBar.querySelectorAll('.script-tab');
-            tabs.forEach(tab => {
-                const tabName = tab.querySelector('.tab-name').textContent.toLowerCase();
-                if (tabName.includes(query)) {
-                    tab.style.display = '';
-                } else {
-                    tab.style.display = 'none';
-                }
-            });
-        }
-
-        function showNotification(message, type = 'info') {
-            if (!notificationsEnabled) return;
-            
-            const container = document.getElementById('notification-container');
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            
-            container.appendChild(notification);
-            
-            // Trigger the animation
-            setTimeout(() => {
-                notification.classList.add('show');
-            }, 10);
-
-            // Remove the notification after a delay
-            setTimeout(() => {
-                notification.classList.remove('show');
-                notification.addEventListener('transitionend', () => {
-                    notification.remove();
-                });
-            }, 5000);
-        }
-
-        function showConfirmationModal(title, text, onConfirm) {
-            document.getElementById('confirm-modal-title').textContent = title;
-            document.getElementById('confirm-modal-text').textContent = text;
-            const confirmBtn = document.getElementById('confirm-modal-confirm');
-            const cancelBtn = document.getElementById('confirm-modal-cancel');
-            
-            const confirmHandler = () => {
-                onConfirm();
-                hide();
-            };
-            const cancelHandler = () => hide();
-
-            const hide = () => {
-                confirmModalOverlay.classList.add('hidden');
-                confirmBtn.removeEventListener('click', confirmHandler);
-                cancelBtn.removeEventListener('click', cancelHandler);
-            };
-
-            confirmBtn.addEventListener('click', confirmHandler);
-            cancelBtn.addEventListener('click', cancelHandler);
-            confirmModalOverlay.classList.remove('hidden');
-        }
-
-        async function confirmClearData() {
-            const result = await window.electronAPI.clearAppData();
-            if (result.success) {
-                showNotification('App data cleared. Restarting...');
-                localStorage.removeItem('zyronUsername');
-                localStorage.removeItem('zyronLastActiveTab');
-                localStorage.removeItem('zyronPerfMode');
-                localStorage.removeItem('zyronNotifications');
-                location.reload();
-            } else {
-                showNotification(`Failed to clear data: ${result.error}`, 'error');
-            }
-        }
-
-        async function loadChangelog() {
-            const changelogData = await window.electronAPI.getChangelog();
-            if (changelogData) {
-                document.getElementById('app-version').textContent = `Build: ${changelogData.latestVersion}`;
-                const container = document.getElementById('changelog-container');
-                container.innerHTML = '';
-                changelogData.changelogs.forEach(log => {
-                    const entry = document.createElement('div');
-                    entry.className = 'changelog-entry';
-                    const changesHtml = log.changes.map(c => `<li>${c}</li>`).join('');
-                    entry.innerHTML = `<h3>Version ${log.version} <span style="font-size: 0.8em; color: var(--text-muted);">(${log.date})</span></h3><ul>${changesHtml}</ul>`;
-                    container.appendChild(entry);
-                });
-            }
-        }
-
-        initApp();
-    });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>

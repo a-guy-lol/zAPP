@@ -38,6 +38,7 @@ autoUpdater.on('update-available', (info) => {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('update-available', info);
   }
+  // Don't automatically download - wait for user confirmation
 });
 
 autoUpdater.on('update-not-available', (info) => {
@@ -98,7 +99,7 @@ function createWindow() {
         console.log('Development mode - skipping update check');
         return;
       }
-      autoUpdater.checkForUpdatesAndNotify();
+      autoUpdater.checkForUpdates(); // Changed from checkForUpdatesAndNotify to checkForUpdates
     }, 3000);
   });
 
@@ -224,7 +225,7 @@ ipcMain.handle('execute-script', async (event, scriptContent) => {
 
   if (!serverPort) {
       setDiscordActivity({ details: `Editing ${currentActiveScriptTabName}.lua` });
-      return { success: false, message: `Could not locate HTTP server on ports ${START_PORT}-${END_PORT}.` };
+      return { success: false, message: `Could not connect to Hydrogen. Try restarting Hydrogen or Roblox.` };
   }
 
   try {
@@ -346,12 +347,128 @@ ipcMain.handle('check-for-updates', async () => {
     }
 });
 
+ipcMain.handle('download-update', async () => {
+    if (!app.isPackaged) {
+        return { success: false, message: 'Updates only available in packaged app' };
+    }
+    try {
+        await autoUpdater.downloadUpdate();
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
 ipcMain.handle('install-update', () => {
     autoUpdater.quitAndInstall();
 });
 
 ipcMain.handle('get-app-version', () => {
     return app.getVersion();
+});
+
+// Script Hub functionality
+ipcMain.handle('get-scripts', async () => {
+    try {
+        const scriptsDir = path.join(__dirname, 'src', 'scripts');
+        if (!fs.existsSync(scriptsDir)) {
+            return [];
+        }
+        
+        const scriptFolders = fs.readdirSync(scriptsDir, { withFileTypes: true })
+            .filter(dirent => dirent.isDirectory())
+            .map(dirent => dirent.name);
+        
+        const scripts = [];
+        
+        for (const folderName of scriptFolders) {
+            const scriptPath = path.join(scriptsDir, folderName);
+            const script = {
+                name: folderName,
+                path: scriptPath,
+                description: '',
+                thumbnail: null
+            };
+            
+            // Read description
+            const descPath = path.join(scriptPath, 'description.txt');
+            if (fs.existsSync(descPath)) {
+                script.description = fs.readFileSync(descPath, 'utf-8').trim();
+            }
+            
+            // Find thumbnail
+            const imageExts = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+            for (const ext of imageExts) {
+                const imgPath = path.join(scriptPath, 'image' + ext);
+                if (fs.existsSync(imgPath)) {
+                    script.thumbnail = imgPath;
+                    break;
+                }
+            }
+            
+            // Check if script.lua exists
+            const luaPath = path.join(scriptPath, 'script.lua');
+            if (fs.existsSync(luaPath)) {
+                scripts.push(script);
+            }
+        }
+        
+        return scripts;
+    } catch (error) {
+        console.error('Error getting scripts:', error);
+        return [];
+    }
+});
+
+ipcMain.handle('execute-hub-script', async (event, scriptPath) => {
+    try {
+        const luaFile = path.join(scriptPath, 'script.lua');
+        if (!fs.existsSync(luaFile)) {
+            return { success: false, message: 'Script file not found' };
+        }
+        
+        const scriptContent = fs.readFileSync(luaFile, 'utf-8');
+        
+        // Use the existing execute-script logic
+        const START_PORT = 6969;
+        const END_PORT = 7069;
+        let serverPort = null;
+
+        for (let port = START_PORT; port <= END_PORT; port++) {
+            try {
+                const res = await fetch(`http://127.0.0.1:${port}/secret`, { method: 'GET', timeout: 200 });
+                if (res.ok && await res.text() === '0xdeadbeef') {
+                    serverPort = port;
+                    break;
+                }
+            } catch (e) { }
+        }
+
+        if (!serverPort) {
+            return { success: false, message: `Hydrogen is not connected to Roblox. ` };
+        }
+
+        try {
+            const postUrl = `http://127.0.0.1:${serverPort}/execute`;
+            const response = await fetch(postUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: scriptContent
+            });
+
+            if (response.ok) {
+                const resultText = await response.text();
+                return { success: true, message: `Script executed successfully: ${resultText}` };
+            } else {
+                const errorText = await response.text();
+                return { success: false, message: `HTTP ${response.status}: ${errorText}` };
+            }
+        } catch (error) {
+            return { success: false, message: error.message };
+        }
+    } catch (error) {
+        return { success: false, message: error.message };
+    }
 });
 
 app.on('before-quit', (event) => {

@@ -16,6 +16,25 @@ TAG="v$VERSION"
 
 echo "🚀 Creating release $TAG"
 
+# Check for uncommitted changes and stash them
+if ! git diff --quiet || ! git diff --cached --quiet; then
+    echo "💾 Stashing uncommitted changes"
+    git stash push -m "Auto-stash before release $TAG"
+    STASHED=true
+else
+    STASHED=false
+fi
+
+# Pull latest changes first with rebase to handle divergent branches
+echo "🔄 Pulling latest changes from remote"
+git pull --rebase origin main
+
+# Restore stashed changes if any
+if [ "$STASHED" = true ]; then
+    echo "🔄 Restoring your changes"
+    git stash pop
+fi
+
 # Update package.json version
 echo "📝 Updating package.json version to $VERSION"
 sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
@@ -29,9 +48,9 @@ sed -i '' "s/readonly APPLICATION_VERSION=\".*\"/readonly APPLICATION_VERSION=\"
 echo "📝 Updating changelog.json version to $VERSION"
 sed -i '' "s/\"latestVersion\": \".*\"/\"latestVersion\": \"$VERSION\"/" changelog.json
 
-# Commit changes
-echo "📦 Committing version changes"
-git add package.json build.sh install.sh changelog.json
+# Commit all changes (app changes + version updates)
+echo "📦 Committing all changes for release"
+git add .
 git commit -m "Release $TAG"
 
 # Create and push tag
