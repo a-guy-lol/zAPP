@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Simple release script for Zyron
-# Usage: ./release.sh [version] (e.g., ./release.sh 1.0.1)
-
 set -e
 
 if [ -z "$1" ]; then
