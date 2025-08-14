@@ -1,6 +1,6 @@
 {
   "name": "zyronui",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "luaU script editor",
   "main": "main.js",
   "scripts": {
@@ -16,7 +16,8 @@
   "dependencies": {
     "discord-rpc": "^4.0.1",
     "electron-updater": "^6.6.2",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
     "electron": "^31.0.1",

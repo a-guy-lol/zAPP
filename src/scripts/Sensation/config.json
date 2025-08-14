@@ -1,0 +1,8 @@
+{
+    "type": "paid-free",
+    "name": "Sensation",
+    "description": "Sensation script - works free or with premium key",
+    "author": "Hex / Sensation™",
+    "supportsExecuteOnJoin": true,
+    "hasKeyOptions": true
+}

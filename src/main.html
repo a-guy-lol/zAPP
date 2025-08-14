@@ -60,7 +60,14 @@
                 <div id="scripts-pane" class="content-pane hidden">
                     <div class="scripts-header">
                         <h1>Here are scripts we recommend!</h1>
-                        <input type="text" id="script-hub-search" placeholder="Search scripts...">
+                        <div class="scripts-controls">
+                            <div class="script-filter-buttons">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="free">Free</button>
+                                <button class="filter-btn" data-filter="paid">Paid</button>
+                            </div>
+                            <input type="text" id="script-hub-search" placeholder="Search scripts...">
+                        </div>
                     </div>
                     <div id="script-cards-container">
                         <!-- Script cards will be loaded here -->
@@ -114,6 +121,16 @@
                                     <span class="slider"></span>
                                 </label>
                             </div>
+                            <div class="setting-item">
+                                <div class="setting-info">
+                                    <h3>Zexium API <span class="beta-label">BETA</span></h3>
+                                    <p class="setting-description">Enable API connection between Zyron and Roblox for advanced features like Execute on Join and saved keys</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="zexium-api-toggle">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
 
                         <div class="settings-section">
@@ -147,11 +164,64 @@
             </div>
             <div id="bottom-bar">
                 <div id="connection-status">
-                    <div id="status-indicator" class="status-indicator disconnected"></div>
-                    <span id="status-text">Disconnected</span>
+                    <div class="connection-item">
+                        <img src="assets/images/robloxIcon.png" class="connection-icon" alt="Roblox">
+                        <span id="roblox-status-text">Disconnected</span>
+                        <div id="roblox-status-indicator" class="status-indicator disconnected"></div>
+                    </div>
+                    <div class="connection-item">
+                        <img src="assets/images/zexiumIcon.png" class="connection-icon" alt="Zexium">
+                        <span id="zexium-status-text">Disabled</span>
+                        <div id="zexium-status-indicator" class="status-indicator disconnected"></div>
+                    </div>
                 </div>
                 <div id="user-display"></div>
                 <button id="execute-btn" disabled>Execute</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Settings Modal -->
+    <div id="script-settings-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2 id="script-settings-modal-title">Script Settings</h2>
+            <div class="script-settings-content">
+                <div class="setting-item">
+                    <div class="setting-info">
+                        <h3>Execute on Join</h3>
+                        <p class="setting-description">Automatically execute this script when joining a Roblox game</p>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="execute-on-join-toggle">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item" id="set-key-setting" style="display: none;">
+                    <div class="setting-info">
+                        <h3>Key</h3>
+                        <p class="setting-description">Script key (saved automatically when changed)</p>
+                    </div>
+                    <div class="key-input-container">
+                        <input type="text" id="script-key-input" class="form-input" placeholder="Enter script key...">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="script-settings-done" class="btn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Set Key Modal -->
+    <div id="set-key-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2>Set Script Key</h2>
+            <p>Enter the key you want to be used when this script is executed</p>
+            <p class="disclaimer">This key is stored locally on your device only and is not shared with us.</p>
+            <input id="key-input" type="text" class="form-input" placeholder="Enter your key here...">
+            <div class="modal-actions">
+                <button id="set-key-cancel" class="btn btn-secondary">Cancel</button>
+                <button id="set-key-save" class="btn">Save Key</button>
             </div>
         </div>
     </div>
@@ -166,7 +236,7 @@
             <h2 id="rename-modal-title">Rename</h2>
             <input id="rename-modal-input" type="text" class="form-input">
             <div class="modal-actions">
-                <button id="rename-modal-cancel" class="btn">Cancel</button>
+                <button id="rename-modal-cancel" class="btn btn-secondary">Cancel</button>
                 <button id="rename-modal-save" class="btn">Save</button>
             </div>
         </div>
@@ -177,7 +247,7 @@
             <h2 id="confirm-modal-title">Are you sure?</h2>
             <p id="confirm-modal-text">This action cannot be undone.</p>
             <div class="modal-actions">
-                <button id="confirm-modal-cancel" class="btn">Cancel</button>
+                <button id="confirm-modal-cancel" class="btn btn-secondary">Cancel</button>
                 <button id="confirm-modal-confirm" class="btn btn-danger">Confirm</button>
             </div>
         </div>

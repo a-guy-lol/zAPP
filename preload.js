@@ -31,5 +31,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   // Script Hub methods
   getScripts: () => ipcRenderer.invoke('get-scripts'),
-  executeHubScript: (scriptPath) => ipcRenderer.invoke('execute-hub-script', scriptPath),
+  executeHubScript: (scriptPath, useZexiumAPI, savedKey) => ipcRenderer.invoke('execute-hub-script', scriptPath, useZexiumAPI, savedKey),
+  
+  // Zexium API methods
+  toggleZexiumAPI: (isEnabled) => ipcRenderer.invoke('toggle-zexium-api', isEnabled),
+  getZexiumAPIStatus: () => ipcRenderer.invoke('get-zexium-api-status'),
+  executeScriptZexium: (scriptContent) => ipcRenderer.invoke('execute-script-zexium', scriptContent),
+  
+  // Script settings methods
+  saveScriptSettings: (scriptName, settings) => ipcRenderer.invoke('save-script-settings', scriptName, settings),
+  loadScriptSettings: (scriptName) => ipcRenderer.invoke('load-script-settings', scriptName),
+  executeOnJoinScripts: () => ipcRenderer.invoke('execute-on-join-scripts'),
 });

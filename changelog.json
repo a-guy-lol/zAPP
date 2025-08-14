@@ -1,11 +1,25 @@
 {
-  "latestVersion": "1.2.0",
+  "latestVersion": "1.3.0",
   "changelogs": [
-    {
-      "version": "1.2.0",
-      "date": "2025-08-03",
-      "changes": [
-        "Added update popup - you now choose whether to install updates instead of forced updates",
+{
+  "version": "1.3.0",
+  "date": "2025-08-14",
+  "changes": [
+    "You can now filter scripts by Free, Key System, Paid, or show all",
+    "Connected Zexium API so you can run custom scripts and talk with the client",
+    "New option to run a script right when you join and set script keys",
+    "Connection status icons are now clickable and show more details",
+    "Zexium status icons now show if you're connected or not",
+    "Made the app’s transparency match better across all parts",
+    "Connection status section now uses proper icons and smooth hover effects",
+    "Status popups now show live connection updates"
+  ]
+},
+{
+  "version": "1.2.0",
+  "date": "2025-08-03",
+  "changes": [
+    "Added update popup - you now choose whether to install updates instead of forced updates",
         "Redesigned navigation with icons and text labels for better user experience",
         "Added new Scripts tab with script hub featuring browseable script cards",
         "Reordered navigation to Editor, Scripts, Settings, About for better workflow",
