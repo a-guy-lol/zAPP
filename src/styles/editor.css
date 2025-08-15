@@ -1,0 +1,108 @@
+.content-pane {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column; /* Changed */
+    overflow: hidden;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.2); /* Added background */
+}
+
+#script-tab-container {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    flex-shrink: 0;
+    gap: 0.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#script-tab-bar {
+    display: flex;
+    flex-grow: 1;
+    gap: 0.5rem;
+    overflow-x: auto;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+#script-tab-bar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+.script-tab {
+    padding: 0.5rem 1.5rem; /* Adjusted padding */
+    cursor: pointer;
+    background-color: var(--tab-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-shrink: 0; /* Prevent tabs from shrinking */
+}
+.script-tab.dragging {
+    opacity: 0.5;
+}
+.script-tab:hover { 
+    background-color: rgba(255, 255, 255, 0.1); 
+    color: var(--text-main);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+.script-tab.active {
+    background-color: var(--active-tab-bg);
+    color: var(--text-main);
+    font-weight: 600;
+    border-color: rgba(255, 255, 255, 0.4);
+}
+.tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.close-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem; opacity: 0.6; padding: 0; line-height: 1; }
+.close-btn:hover { opacity: 1; }
+#new-tab-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.5rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+#new-tab-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+
+#script-search-box {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin-left: auto; /* Pushes to the right */
+    width: 200px;
+}
+#script-search-box:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+
+#editor-area { flex-grow: 1; position: relative; border-radius: 10px; }
+.editor-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.ace_editor, .ace_editor .ace_gutter { background-color: transparent !important; }
+
+#execute-btn {
+    background: white;
+    color: black;
+    border: none;
+    padding: 10px 25px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+#execute-btn:hover:not(:disabled) {
+    background: #ddd;
+    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+#execute-btn:disabled { background: #888; cursor: not-allowed; }

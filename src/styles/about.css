@@ -1,0 +1,224 @@
+#about-pane {
+    padding: 0;
+    overflow-y: auto;
+    color: var(--text-main);
+    background: var(--bg-primary);
+}
+
+.about-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.about-header-section {
+    text-align: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.about-logo {
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    margin-bottom: 1.5rem;
+}
+
+.about-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-main);
+}
+
+.about-version {
+    color: var(--text-muted);
+    font-size: 1rem;
+    margin: 0 0 0.5rem 0;
+}
+
+.about-developer {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0;
+    font-style: italic;
+}
+
+.about-description-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 2rem;
+    backdrop-filter: blur(10px);
+}
+
+.about-description-card h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: center;
+}
+
+.about-description-card p {
+    line-height: 1.7;
+    margin-bottom: 1rem;
+    color: var(--text-muted);
+}
+
+.about-description-card p:last-child {
+    margin-bottom: 0;
+}
+
+.changelog-section {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.changelog-section h3 {
+    margin: 0;
+    padding: 1.5rem;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-main);
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.changelog-filters {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.changelog-content {
+    padding: 1.5rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.changelog-entry {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.changelog-entry:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.changelog-entry:last-child {
+    margin-bottom: 0;
+}
+
+.version-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.version-badge {
+    padding: 0.3rem 0.8rem;
+    background: linear-gradient(135deg, hsl(225, 100%, 99%), hsl(0, 0%, 24%));
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.changelog-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.changelog-entry h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.changelog-entry ul {
+    padding-left: 1.5rem;
+    margin: 0;
+}
+
+.changelog-entry li {
+    margin-bottom: 0.5rem;
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+.changelog-entry li:last-child {
+    margin-bottom: 0;
+}
+
+.changelog-filters .filter-btn {
+    padding: 0.6rem 1.4rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.changelog-filters .filter-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-main);
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.changelog-filters .filter-btn.active {
+    background: rgba(255, 255, 255, 0.9);
+    color: #000;
+    border-color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .about-wrapper {
+        padding: 1rem;
+        gap: 1.5rem;
+    }
+    
+    .about-header-section {
+        padding: 1.5rem;
+    }
+    
+    .about-title {
+        font-size: 2rem;
+    }
+    
+    .changelog-filters {
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+    
+    .changelog-filters .filter-btn {
+        flex: 1;
+        min-width: 80px;
+    }
+}

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly APPLICATION_NAME="Zyron"
-readonly APPLICATION_VERSION="1.3.0"
+readonly APPLICATION_VERSION="1.3.1"
 readonly SOURCE_USER="a-guy-lol"
 readonly SOURCE_REPOSITORY="zAPP"
 readonly TARGET_DIRECTORY="/Applications"

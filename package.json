@@ -1,11 +1,12 @@
 {
   "name": "zyronui",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "luaU script editor",
-  "main": "main.js",
+  "main": "core/main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --publish=never"
+    "build": "electron-builder --publish=never",
+    "build-test": "electron-builder --publish=always"
   },
   "keywords": [
     "editor",
@@ -26,6 +27,11 @@
   "build": {
     "appId": "com.zyron.ui",
     "productName": "Zyron",
+    "publish": {
+      "provider": "github",
+      "owner": "a-guy-lol",
+      "repo": "zAPP"
+    },
     "mac": {
       "category": "public.app-category.developer-tools",
       "target": [

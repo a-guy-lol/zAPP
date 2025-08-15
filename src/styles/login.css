@@ -1,0 +1,32 @@
+#login-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+#login-card {
+    background: rgba(10, 10, 10, 0.96);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 10px;
+    text-align: center;
+    color: white;
+    width: 400px;
+}
+#login-card h1 { font-size: 36px; margin-bottom: 20px; color: white; }
+#login-card p { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; }
+.form-input {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 15px;
+    border-radius: 5px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 16px;
+}
+.form-input:focus { outline: none; border-color: white; }
+.links { margin-top: 20px; }
+.links a { color: white; text-decoration: underline; }

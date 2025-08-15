@@ -4,7 +4,15 @@
     <meta charset="UTF-8">
     <title>Zyron Editor</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/layout.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/login.css">
+    <link rel="stylesheet" href="styles/editor.css">
+    <link rel="stylesheet" href="styles/scripthub.css">
+    <link rel="stylesheet" href="styles/settings.css">
+    <link rel="stylesheet" href="styles/about.css">
+    <link rel="stylesheet" href="styles/responsive.css">
 </head>
 <body>
     <div id="app-wrapper">
@@ -74,92 +82,146 @@
                     </div>
                 </div>
                 <div id="settings-pane" class="content-pane hidden">
-                    <div style="width: 100%; max-width: 800px; margin: 0 auto; padding: 1rem;">
-                        <div class="settings-section">
-                            <h2>Visuals</h2>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Performance Mode</h3>
-                                    <p class="setting-description">Disables animations and transitions to improve performance on slower devices</p>
-                                </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="performance-mode-toggle">
-                                    <span class="slider"></span>
-                                </label>
+                    <div class="settings-container">
+                        <div class="settings-sidebar">
+                            <div class="settings-tab active" data-tab="general">
+                                <img src="assets/images/settingsIcon.png" class="settings-tab-icon" alt="General">
+                                <span>General</span>
+                            </div>
+                            <div class="settings-tab" data-tab="visuals">
+                                <img src="assets/images/stars.png" class="settings-tab-icon" alt="Visuals">
+                                <span>Visuals</span>
+                            </div>
+                            <div class="settings-tab" data-tab="account">
+                                <img src="assets/images/aboutIcon.png" class="settings-tab-icon" alt="Account & Data">
+                                <span>Account & Data</span>
                             </div>
                         </div>
-
-                        <div class="settings-section">
-                            <h2>Functionality</h2>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Auto Save</h3>
-                                    <p class="setting-description">Automatically saves your scripts every 30 seconds</p>
+                        
+                        <div class="settings-content">
+                            <div id="general-settings" class="settings-panel active">
+                                <h2>General</h2>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Auto Save</h3>
+                                        <p class="setting-description">Automatically saves your scripts every 30 seconds</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="auto-save-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
                                 </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="auto-save-toggle" checked>
-                                    <span class="slider"></span>
-                                </label>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Enable Notifications</h3>
+                                        <p class="setting-description">Shows popup notifications for script execution and app events</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="notifications-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Discord Rich Presence</h3>
+                                        <p class="setting-description">Shows your Zyron activity status on Discord</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="discord-rpc-toggle">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Zexium API <span class="beta-label">BETA</span></h3>
+                                        <p class="setting-description">Enable API connection between Zyron and Roblox for advanced features like Execute on Join and saved keys</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="zexium-api-toggle">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Discord Rich Presence</h3>
-                                    <p class="setting-description">Shows your Zyron activity status on Discord</p>
+                            
+                            <div id="visuals-settings" class="settings-panel">
+                                <h2>Visuals</h2>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Animations</h3>
+                                        <p class="setting-description">Enables smooth animations and transitions throughout the app</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="animations-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
                                 </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="discord-rpc-toggle">
-                                    <span class="slider"></span>
-                                </label>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Visual Effects</h3>
+                                        <p class="setting-description">Enables visual effects like blurs and gradients</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="effects-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Save Indicator</h3>
+                                        <p class="setting-description">Shows a flashing save icon when files are being saved</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="save-indicator-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
                             </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Enable Notifications</h3>
-                                    <p class="setting-description">Shows popup notifications for script execution and app events</p>
+                            
+                            <div id="account-settings" class="settings-panel">
+                                <h2>Account & Data</h2>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Change Name</h3>
+                                        <p class="setting-description">Update your display name shown in the app</p>
+                                    </div>
+                                    <button id="rename-user-btn" class="btn">Rename</button>
                                 </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="notifications-toggle" checked>
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Zexium API <span class="beta-label">BETA</span></h3>
-                                    <p class="setting-description">Enable API connection between Zyron and Roblox for advanced features like Execute on Join and saved keys</p>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Clear App Data</h3>
+                                        <p class="setting-description">Permanently delete all scripts, settings, and user data</p>
+                                    </div>
+                                    <button id="clear-data-btn" class="btn btn-danger">Clear Data</button>
                                 </div>
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="zexium-api-toggle">
-                                    <span class="slider"></span>
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="settings-section">
-                            <h2>Account & Data</h2>
-                            <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Change Name</h3>
-                                    <p class="setting-description">Update your display name shown in the app</p>
-                                </div>
-                                <button id="rename-user-btn" class="btn">Rename</button>
-                            </div>
-                             <div class="setting-item">
-                                <div class="setting-info">
-                                    <h3>Clear App Data</h3>
-                                    <p class="setting-description">Permanently delete all scripts, settings, and user data</p>
-                                </div>
-                                <button id="clear-data-btn" class="btn btn-danger">Clear Data</button>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div id="about-pane" class="content-pane hidden">
-                    <img src="https://i.imgur.com/SZtzFrW.png" alt="Zexon Development Logo">
-                    <h1>Zyron</h1>
-                    <p style="text-align: center; color: var(--text-muted);" id="app-version"></p>
-                    <p>Zexon Development is a private organization, branded as Zexon, that has created projects like Zyron, Zexon Script, and other Roblox Projects. Zexon and Zyron do not collect any data whatsoever. It only connects to Hydrogen and stores data on the user's device. Zyron is a custom UI for the Roblox Executor named Hydrogen. Zyron is not an executor itself but a layer; it connects to Hydrogen and can execute scripts for you, providing a premium user experience.</p>
-                    
-                    <h2>Changelog</h2>
-                    <div id="changelog-container"></div>
+                    <div class="about-wrapper">
+                        <div class="about-header-section">
+                            <img src="https://i.imgur.com/SZtzFrW.png" alt="Zexon Development Logo" class="about-logo">
+                            <h1 class="about-title">Zyron</h1>
+                            <p class="about-version" id="app-version"></p>
+                            <p class="about-developer">Developed by Zexon Development</p>
+                        </div>
+                        
+                        <div class="about-description-card">
+                            <h3>About Zyron</h3>
+                            <p>Zexon Development is a private organization, branded as Zexon, that has created projects like Zyron, Zexon Script, and other Roblox Projects. Zexon and Zyron do not collect any data whatsoever. It only connects to Hydrogen and stores data on the user's device.</p>
+                            <p>Zyron is a custom UI for the Roblox Executor named Hydrogen. Zyron is not an executor itself but a layer; it connects to Hydrogen and can execute scripts for you, providing a premium user experience.</p>
+                        </div>
+                        
+                        <div class="changelog-section">
+                            <h3>Changelog</h3>
+                            <div class="changelog-filters">
+                                <button class="filter-btn active" data-filter="all">All</button>
+                                <button class="filter-btn" data-filter="major">Major</button>
+                                <button class="filter-btn" data-filter="minor">Minor</button>
+                            </div>
+                            <div id="changelog-container" class="changelog-content"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div id="bottom-bar">
@@ -173,6 +235,9 @@
                         <img src="assets/images/zexiumIcon.png" class="connection-icon" alt="Zexium">
                         <span id="zexium-status-text">Disabled</span>
                         <div id="zexium-status-indicator" class="status-indicator disconnected"></div>
+                    </div>
+                    <div id="save-indicator" class="hidden">
+                        <img src="assets/images/saveIcon.png" class="save-icon" alt="Saving">
                     </div>
                 </div>
                 <div id="user-display"></div>
@@ -278,6 +343,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-lua.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="script.js"></script>
+    <script src="javascripts/storage.js"></script>
+    <script src="javascripts/state.js"></script>
+    <script src="javascripts/ui.js"></script>
+    <script src="javascripts/saving.js"></script>
+    <script src="javascripts/tabs.js"></script>
+    <script src="javascripts/editor.js"></script>
+    <script src="javascripts/settings.js"></script>
+    <script src="javascripts/api.js"></script>
+    <script src="javascripts/scripthub.js"></script>
+    <script src="javascripts/modals.js"></script>
+    <script src="javascripts/utils.js"></script>
+    <script src="javascripts/app.js"></script>
 </body>
 </html>

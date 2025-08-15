@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+:root {
+    --bg-main: #000;
+    --bg-secondary: rgba(20, 20, 20, 0.8);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --text-main: #e5e7eb;
+    --text-muted: #9ca3af;
+    --accent-color: #fff;
+    --active-tab-bg: rgba(255, 255, 255, 0.1);
+    --green-status: #2ecc71;
+    --red-status: #e74c3c;
+    --tab-bg: rgba(255, 255, 255, 0.05);
+}
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    background-color: transparent; /* Changed */
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+    user-select: none;
+    color: var(--text-main);
+}
+
+/* Visual Settings Adjustments */
+body.no-animations * {
+    transition: none !important;
+    animation: none !important;
+}
+
+body.no-effects {
+    backdrop-filter: none !important;
+}
+
+body.no-effects * {
+    backdrop-filter: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+}
+
+/* Legacy Performance Mode (kept for compatibility) */
+body.performance-mode * {
+    transition: none !important;
+    animation: none !important;
+}

@@ -7,3 +7,5 @@ dist/
 
 # Private files
 .release-notes
+
+.context

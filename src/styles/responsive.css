@@ -1,0 +1,86 @@
+@media (max-width: 800px) {
+    .scripts-header h1 {
+        font-size: 1.4rem;
+    }
+    
+    .scripts-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.8rem;
+    }
+    
+    #script-cards-container {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+        padding: 1rem;
+    }
+}
+
+@media (max-width: 600px) {
+    .scripts-header h1 {
+        font-size: 1.2rem;
+    }
+    
+    #script-cards-container {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+        padding: 0.8rem;
+    }
+    
+    .script-card {
+        width: 100%;
+        max-width: none;
+    }
+}
+
+@media (max-width: 400px) {
+    .scripts-header {
+        padding: 1rem;
+    }
+    
+    .scripts-header h1 {
+        font-size: 1rem;
+    }
+    
+    .filter-btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    #script-hub-search {
+        padding: 0.4rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    
+    #script-cards-container {
+        padding: 0.6rem;
+        gap: 0.6rem;
+    }
+    
+    .script-card {
+        min-height: 140px;
+    }
+    
+    .script-thumbnail {
+        height: 70px;
+    }
+    
+    .script-info {
+        padding: 0.5rem;
+    }
+    
+    .script-title {
+        font-size: 0.8rem;
+    }
+    
+    .script-description {
+        font-size: 0.7rem;
+        -webkit-line-clamp: 1;
+        line-clamp: 1;
+    }
+    
+    .script-execute-btn {
+        padding: 0.3rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}

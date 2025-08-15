@@ -1,6 +1,18 @@
 {
-  "latestVersion": "1.3.0",
+  "latestVersion": "1.3.1",
   "changelogs": [
+{
+  "version": "1.3.1",
+  "date": "2025-08-15",
+  "changes": [
+    "Data Migration - your data from v1.2.0 will convert to the new format.",
+    "Sorry if you lost your data from v1.3.0",
+    "Revamped Settings - Looks cleaner and neater!",
+    "New changelogs/about design - Improved layout and readability.",
+    "and fixed other bugs that are unnecessary to be noted"
+  ]
+},
+
 {
   "version": "1.3.0",
   "date": "2025-08-14",

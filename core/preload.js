@@ -14,31 +14,31 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updateActiveScriptName: (scriptName) => ipcRenderer.send('update-active-script-name', scriptName),
   getChangelog: () => ipcRenderer.invoke('get-changelog'),
   clearAppData: () => ipcRenderer.invoke('clear-app-data'),
-  setOpacity: (opacity) => ipcRenderer.send('set-opacity', opacity),
+  setWindowOpacity: (opacity) => ipcRenderer.invoke('set-window-opacity', opacity),
   toggleDiscordRpc: (isEnabled) => ipcRenderer.invoke('toggle-discord-rpc', isEnabled),
   getDiscordRpcStatus: () => ipcRenderer.invoke('get-discord-rpc-status'),
   
-  // Auto-updater methods
+  isDevelopment: () => ipcRenderer.invoke('is-development'),
+  
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
+  checkForUpdatesForce: () => ipcRenderer.invoke('check-for-updates-force'),
   downloadUpdate: () => ipcRenderer.invoke('download-update'),
   installUpdate: () => ipcRenderer.invoke('install-update'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
   
-  // Auto-updater events
   onUpdateAvailable: (callback) => ipcRenderer.on('update-available', callback),
   onDownloadProgress: (callback) => ipcRenderer.on('download-progress', callback),
   onUpdateDownloaded: (callback) => ipcRenderer.on('update-downloaded', callback),
+  onUpdateError: (callback) => ipcRenderer.on('update-error', callback),
+  onUpdateLog: (callback) => ipcRenderer.on('update-log', callback),
   
-  // Script Hub methods
   getScripts: () => ipcRenderer.invoke('get-scripts'),
   executeHubScript: (scriptPath, useZexiumAPI, savedKey) => ipcRenderer.invoke('execute-hub-script', scriptPath, useZexiumAPI, savedKey),
   
-  // Zexium API methods
   toggleZexiumAPI: (isEnabled) => ipcRenderer.invoke('toggle-zexium-api', isEnabled),
   getZexiumAPIStatus: () => ipcRenderer.invoke('get-zexium-api-status'),
   executeScriptZexium: (scriptContent) => ipcRenderer.invoke('execute-script-zexium', scriptContent),
   
-  // Script settings methods
   saveScriptSettings: (scriptName, settings) => ipcRenderer.invoke('save-script-settings', scriptName, settings),
   loadScriptSettings: (scriptName) => ipcRenderer.invoke('load-script-settings', scriptName),
   executeOnJoinScripts: () => ipcRenderer.invoke('execute-on-join-scripts'),
