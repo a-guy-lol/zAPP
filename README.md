@@ -1,15 +1,15 @@
-# 🔲 Zyron Script Editor
+#  Zyron 
 
 Formerly known as **ZexonUI**, **Zyron** is a sleek, modern script editor that connects with **[Hydrogen](https://hydrogen.lat)** to help you run your scripts seamlessly.
 
-## ✨ Features
+##  Features
 
 - 🖥️ **Universal Support**: Works on both Apple Silicon (M1/M2/M3) and Intel Macs
 - ⛓️‍💥 **Hydrogen Integration**: Direct connection to Hydrogen for script execution
 - 🎨 **Modern UI**: Clean, intuitive interface designed for productivity
 - 🧱 **Easy Installation**: One-command installation with no dependencies required
 
-## 📦 Quick Installation
+##  Quick Installation
 
 **The easiest way to install Zyron:**
 
@@ -17,7 +17,7 @@ Formerly known as **ZexonUI**, **Zyron** is a sleek, modern script editor that c
 curl -sL "https://raw.githubusercontent.com/a-guy-lol/zAPP/main/install.sh" | bash
 ```
 
-## 🔧 Manual Installation
+##  Manual Installation
 
 If you prefer manual installation, download the latest release:\
 
@@ -27,7 +27,7 @@ If you prefer manual installation, download the latest release:\
 - Download the universal DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
 
 
-## 📸 Screenshots
+##  Screenshots
 
 | Set your name! | Edit/Save Scripts! |
 | ------------- | ------------------ |
