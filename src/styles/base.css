@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 :root {
+    color-scheme: dark;
     --bg-main: #000;
     --bg-secondary: rgba(20, 20, 20, 0.8);
     --border-color: rgba(255, 255, 255, 0.1);
@@ -10,6 +11,9 @@
     --green-status: #2ecc71;
     --red-status: #e74c3c;
     --tab-bg: rgba(255, 255, 255, 0.05);
+    --scrollbar-track: rgba(255, 255, 255, 0.04);
+    --scrollbar-thumb: rgba(255, 255, 255, 0.22);
+    --scrollbar-thumb-hover: rgba(255, 255, 255, 0.34);
 }
 body {
     margin: 0;
@@ -20,6 +24,35 @@ body {
     font-family: 'Inter', sans-serif;
     user-select: none;
     color: var(--text-main);
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 2px solid rgba(8, 8, 8, 0.5);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+    background: transparent;
 }
 
 /* Visual Settings Adjustments */

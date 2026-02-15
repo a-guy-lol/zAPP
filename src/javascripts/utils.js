@@ -2,37 +2,99 @@ function showNotification(message, type = 'info') {
     if (!notificationsEnabled) return;
     
     const container = document.getElementById('notification-container');
+    if (!container) return;
+
+    const normalizedType = type === 'error' ? 'error' : 'info';
+    const iconSrcByType = {
+        info: 'assets/images/notification.png',
+        error: 'assets/images/notification.png'
+    };
+    const titleByType = {
+        info: 'Notice',
+        error: 'Error'
+    };
+    const notificationTitle = titleByType[normalizedType];
+    const notificationMessage = String(message);
+
+    let historyId = null;
+    if (typeof window.recordNotification === 'function') {
+        historyId = window.recordNotification({
+            message: notificationMessage,
+            type: normalizedType,
+            title: notificationTitle
+        });
+    }
+
     const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
+    notification.className = `notification ${normalizedType}`;
+
+    const icon = document.createElement('img');
+    icon.className = 'notification-icon';
+    icon.src = iconSrcByType[normalizedType];
+    icon.alt = '';
+
+    const content = document.createElement('div');
+    content.className = 'notification-content';
+
+    const title = document.createElement('div');
+    title.className = 'notification-title';
+    title.textContent = notificationTitle;
+
+    const body = document.createElement('div');
+    body.className = 'notification-message';
+    body.textContent = notificationMessage;
+
+    content.appendChild(title);
+    content.appendChild(body);
+    notification.appendChild(icon);
+    notification.appendChild(content);
     
     container.appendChild(notification);
-    
-    // Trigger the animation
+
+    let dismissed = false;
+    let timeoutId = null;
+
+    const removeNow = () => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    };
+
+    const dismiss = ({ clicked = false, instant = false } = {}) => {
+        if (dismissed) return;
+        dismissed = true;
+        if (timeoutId) clearTimeout(timeoutId);
+
+        if (clicked && historyId && typeof window.markNotificationReadById === 'function') {
+            window.markNotificationReadById(historyId);
+        }
+
+        if (instant) {
+            removeNow();
+            return;
+        }
+
+        notification.classList.remove('show');
+        notification.addEventListener('transitionend', removeNow, { once: true });
+        setTimeout(removeNow, 240);
+    };
+
+    notification.addEventListener('click', () => dismiss({ clicked: true, instant: false }));
+
     setTimeout(() => {
+        if (dismissed) return;
         notification.classList.add('show');
     }, 10);
 
-    // Remove the notification after a delay
-    setTimeout(() => {
-        notification.classList.remove('show');
-        notification.addEventListener('transitionend', () => {
-            notification.remove();
-        });
-    }, 5000);
+    timeoutId = setTimeout(() => dismiss({ clicked: false }), 5000);
 }
 
 function setupStatusPopups() {
     // Add click listeners to connection items
     const robloxConnectionItem = document.querySelector('#roblox-status-indicator').closest('.connection-item');
-    const zexiumConnectionItem = document.querySelector('#zexium-status-indicator').closest('.connection-item');
     
     if (robloxConnectionItem) {
         robloxConnectionItem.addEventListener('click', () => showRobloxStatusPopup());
-    }
-    
-    if (zexiumConnectionItem) {
-        zexiumConnectionItem.addEventListener('click', () => showZexiumStatusPopup());
     }
 }
 
@@ -41,44 +103,16 @@ async function showRobloxStatusPopup() {
     const statusClass = isConnected ? 'connected' : 'disconnected';
     const statusColor = isConnected ? 'var(--green-status)' : 'var(--red-status)';
     const statusText = isConnected ? 'Connected' : 'Disconnected';
+    const executorLabel = selectedExecutor === 'macsploit' ? 'MacSploit' : 'Hydrogen';
     
     let message;
     if (isConnected) {
-        message = "Zyron is fully connected to Roblox/Hydrogen with no issues! Your scripts are ready to execute.";
+        message = `Zyron is connected to Roblox through ${executorLabel}. Your scripts are ready to run.`;
     } else {
-        message = "It seems like Roblox is not connected. Either Roblox is not open or Hydrogen (the required executor) is not installed.";
+        message = `${executorLabel} is not connected right now. Open Roblox and make sure your selected executor is running.`;
     }
 
     showStatusPopup('Roblox', statusText, statusClass, statusColor, message, 'robloxIcon.png');
-}
-
-async function showZexiumStatusPopup() {
-    const zexiumStatus = await window.electronAPI.getZexiumAPIStatus();
-    let statusClass, statusColor, statusText, message;
-    
-    if (!zexiumStatus.enabled) {
-        statusClass = 'disabled';
-        statusColor = '#666';
-        statusText = 'Disabled';
-        message = "Looks like Zexium API is disabled. To unlock enhanced features and Execute on Join functionality, enable it in the settings menu above.";
-    } else if (zexiumStatus.clientConnected) {
-        statusClass = 'connected';
-        statusColor = 'var(--green-status)';
-        statusText = 'Connected';
-        message = "Zexium API is successfully connected to Roblox! Execute on Join functionality is active and ready to enhance your experience.";
-    } else if (zexiumStatus.serverRunning) {
-        statusClass = 'pending';
-        statusColor = '#fbbf24';
-        statusText = 'Pending';
-        message = "Zexium API is waiting for Roblox to respond. If this status persists, try re-entering a game or restarting Roblox to establish the connection.";
-    } else {
-        statusClass = 'disconnected';
-        statusColor = 'var(--red-status)';
-        statusText = 'Disconnected';
-        message = "Zexium API server is not running. This might be temporary - the system will automatically try to reconnect.";
-    }
-
-    showStatusPopup('Zexium API', statusText, statusClass, statusColor, message, 'zexiumIcon.png');
 }
 
 function showStatusPopup(title, statusText, statusClass, statusColor, message, iconName) {
@@ -124,25 +158,6 @@ function showStatusPopup(title, statusText, statusClass, statusColor, message, i
             newStatusClass = isConnected ? 'connected' : 'disconnected';
             newStatusColor = isConnected ? 'var(--green-status)' : 'var(--red-status)';
             newStatusText = isConnected ? 'Connected' : 'Disconnected';
-        } else if (title === 'Zexium API') {
-            const zexiumStatus = await window.electronAPI.getZexiumAPIStatus();
-            if (!zexiumStatus.enabled) {
-                newStatusClass = 'disabled';
-                newStatusColor = '#666';
-                newStatusText = 'Disabled';
-            } else if (zexiumStatus.clientConnected) {
-                newStatusClass = 'connected';
-                newStatusColor = 'var(--green-status)';
-                newStatusText = 'Connected';
-            } else if (zexiumStatus.serverRunning) {
-                newStatusClass = 'pending';
-                newStatusColor = '#fbbf24';
-                newStatusText = 'Pending';
-            } else {
-                newStatusClass = 'disconnected';
-                newStatusColor = 'var(--red-status)';
-                newStatusText = 'Disconnected';
-            }
         }
 
         // Update indicator if status changed

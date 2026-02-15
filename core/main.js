@@ -4,12 +4,14 @@ const path = require('path');
 const autoUpdater = require('./auto-updater');
 const discordRPC = require('./discord-rpc');
 const hydrogenAPI = require('./hydrogen-api');
-const zexiumAPI = require('./zexium-api');
+const consoleBridge = require('./console-bridge');
+const autoexecuteManager = require('./autoexecute-manager');
 const dataManager = require('./data-manager');
 const scriptHub = require('./script-hub');
 
 let mainWindow;
 let isQuitting = false;
+let quitSaveTimeout = null;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -87,9 +89,22 @@ function initializeModules() {
   autoUpdater.initialize(mainWindow);
   discordRPC.initialize();
   hydrogenAPI.initialize();
-  zexiumAPI.initialize();
+  consoleBridge.initialize(mainWindow);
+  autoexecuteManager.initialize();
   dataManager.initialize();
   scriptHub.initialize();
+}
+
+function finalizeQuit() {
+  if (isQuitting) return;
+  isQuitting = true;
+  if (quitSaveTimeout) {
+    clearTimeout(quitSaveTimeout);
+    quitSaveTimeout = null;
+  }
+  discordRPC.shutdown();
+  consoleBridge.shutdown();
+  app.quit();
 }
 
 app.on('before-quit', (event) => {
@@ -100,17 +115,16 @@ app.on('before-quit', (event) => {
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     ipcMain.once('final-save-complete', () => {
-      isQuitting = true;
-      discordRPC.shutdown();
-      zexiumAPI.shutdown();
-      app.quit();
+      finalizeQuit();
     });
+    // Never block quit forever if renderer save callback fails.
+    quitSaveTimeout = setTimeout(() => {
+      console.warn('Final save timed out. Forcing quit.');
+      finalizeQuit();
+    }, 5000);
     mainWindow.webContents.send('request-final-save');
   } else {
-    isQuitting = true;
-    discordRPC.shutdown();
-    zexiumAPI.shutdown();
-    app.quit();
+    finalizeQuit();
   }
 });
 

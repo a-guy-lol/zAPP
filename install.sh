@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly APPLICATION_NAME="Zyron"
-readonly APPLICATION_VERSION="1.3.1"
+readonly APPLICATION_VERSION="1.4.0"
 readonly SOURCE_USER="a-guy-lol"
 readonly SOURCE_REPOSITORY="zAPP"
 readonly TARGET_DIRECTORY="/Applications"
@@ -137,37 +137,36 @@ if [ -z "$RELEASE_INFO" ]; then
     exit 1
 fi
 
-# Parse release info to find the correct DMG
+# Parse release info to find the correct installer asset
 TAG_NAME=$(echo "$RELEASE_INFO" | grep '"tag_name"' | sed 's/.*"tag_name": "\(.*\)".*/\1/')
 display_success "Latest version: $TAG_NAME"
 
 # Find the appropriate installer URL based on architecture
-# Prefer DMG over ZIP for better Gatekeeper compatibility
 if [[ "$ARCH" == "arm64" ]]; then
-    INSTALLER_PATTERN="[Aa]rm64.*\.dmg|[Uu]niversal.*\.dmg"
-    FALLBACK_PATTERN="[Aa]rm64.*\.zip"
+    INSTALLER_PATTERN="[Aa]rm64.*\.zip|[Uu]niversal.*\.zip"
+    FALLBACK_PATTERN="[Aa]rm64.*\.dmg|[Uu]niversal.*\.dmg"
 else
-    INSTALLER_PATTERN="[Ii]ntel.*\.dmg|[Xx]64.*\.dmg|[Uu]niversal.*\.dmg"
-    FALLBACK_PATTERN="[Ii]ntel.*\.zip|[Xx]64.*\.zip"
+    INSTALLER_PATTERN="[Ii]ntel.*\.zip|[Xx]64.*\.zip|[Uu]niversal.*\.zip"
+    FALLBACK_PATTERN="[Ii]ntel.*\.dmg|[Xx]64.*\.dmg|[Uu]niversal.*\.dmg"
 fi
 
-# Try DMG first
-INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.dmg"' | grep -iE "$INSTALLER_PATTERN" | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
+# Try ZIP first
+INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.zip"' | grep -iE "$INSTALLER_PATTERN" | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
 
-# If no DMG found, try ZIP
+# If no ZIP found, try DMG
 if [ -z "$INSTALLER_URL" ]; then
-    display_info "No DMG found, trying ZIP files..."
-    INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.zip"' | grep -iE "$FALLBACK_PATTERN" | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
+    display_info "No ZIP found, trying DMG files..."
+    INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.dmg"' | grep -iE "$FALLBACK_PATTERN" | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
 fi
 
 # If still nothing, try universal build
 if [ -z "$INSTALLER_URL" ]; then
     display_warning "Architecture-specific build not found, trying universal build..."
-    INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.dmg"' | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
+    INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.zip"' | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
     
-    # If no universal DMG, try any ZIP
+    # If no universal ZIP, try any DMG
     if [ -z "$INSTALLER_URL" ]; then
-        INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.zip"' | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
+        INSTALLER_URL=$(echo "$RELEASE_INFO" | grep -o '"browser_download_url": "[^"]*\.dmg"' | head -1 | sed 's/"browser_download_url": "\(.*\)"/\1/')
     fi
 fi
 

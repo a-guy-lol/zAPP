@@ -135,6 +135,31 @@
     font-weight: 500;
 }
 
+.nav-speed-control {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+#nav-speed-slider {
+    width: 100%;
+    accent-color: #ffffff;
+    cursor: pointer;
+}
+
+#nav-speed-slider:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nav-speed-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
 .key-input-container {
     display: flex;
     align-items: center;

@@ -1,5 +1,7 @@
 const DiscordRPC = require('discord-rpc');
-const { ipcMain } = require('electron');
+const { ipcMain, app } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 const clientId = '1385844569052151944';
 let rpc = new DiscordRPC.Client({ transport: 'ipc' });
@@ -8,6 +10,35 @@ let presenceUpdateInterval;
 let rpcEnabled = true;
 let currentActiveScriptTabName = 'No Script Open';
 let isHydrogenConnected = false;
+const RPC_PREFS_FILE = 'discord-rpc-preferences.json';
+
+function getPrefsFilePath() {
+    return path.join(app.getPath('userData'), RPC_PREFS_FILE);
+}
+
+function loadRpcEnabledPreference() {
+    try {
+        const filePath = getPrefsFilePath();
+        if (!fs.existsSync(filePath)) {
+            return true;
+        }
+        const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        if (typeof parsed?.enabled === 'boolean') {
+            return parsed.enabled;
+        }
+    } catch (error) {
+        console.error('Failed to load Discord RPC preference:', error.message);
+    }
+    return true;
+}
+
+function saveRpcEnabledPreference(enabled) {
+    try {
+        fs.writeFileSync(getPrefsFilePath(), JSON.stringify({ enabled: Boolean(enabled) }), 'utf8');
+    } catch (error) {
+        console.error('Failed to save Discord RPC preference:', error.message);
+    }
+}
 
 async function setDiscordActivity(activityDetails = {}) {
     if (!rpc) {
@@ -77,6 +108,7 @@ function shutdown() {
 
 ipcMain.handle('toggle-discord-rpc', (event, isEnabled) => {
     rpcEnabled = isEnabled;
+    saveRpcEnabledPreference(rpcEnabled);
     if (isEnabled) {
         setup();
     } else {
@@ -97,6 +129,7 @@ ipcMain.on('update-active-script-name', (event, scriptName) => {
 });
 
 function initialize() {
+    rpcEnabled = loadRpcEnabledPreference();
 }
 
 function updateConnectionStatus(connected) {

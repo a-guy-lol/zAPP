@@ -1,13 +1,19 @@
 function switchMainView(viewName) {
     scriptsPane.classList.add('hidden');
     editorPane.classList.add('hidden');
+    consolePane.classList.add('hidden');
     settingsPane.classList.add('hidden');
     aboutPane.classList.add('hidden');
     
     navScriptsBtn.classList.remove('active');
     navEditorBtn.classList.remove('active');
+    navConsoleBtn.classList.remove('active');
     navSettingsBtn.classList.remove('active');
     navAboutBtn.classList.remove('active');
+
+    sidePanelSlots.forEach(slot => {
+        slot.classList.toggle('active', slot.dataset.view === viewName);
+    });
 
     if (viewName === 'scripts') {
         scriptsPane.classList.remove('hidden');
@@ -17,12 +23,22 @@ function switchMainView(viewName) {
         editorPane.classList.remove('hidden');
         navEditorBtn.classList.add('active');
         Object.values(editors).forEach(editor => editor.resize());
+    } else if (viewName === 'console') {
+        consolePane.classList.remove('hidden');
+        navConsoleBtn.classList.add('active');
+        if (typeof window.onConsoleViewShown === 'function') {
+            window.onConsoleViewShown();
+        }
     } else if (viewName === 'settings') {
         settingsPane.classList.remove('hidden');
         navSettingsBtn.classList.add('active');
     } else if (viewName === 'about') {
         aboutPane.classList.remove('hidden');
         navAboutBtn.classList.add('active');
+    }
+
+    if (typeof window.onMainViewChanged === 'function') {
+        window.onMainViewChanged(viewName);
     }
 }
 

@@ -1,8 +1,10 @@
 const fetch = require('node-fetch');
 const { ipcMain } = require('electron');
 const discordRPC = require('./discord-rpc');
+const macsploitAPI = require('./macsploit-api');
 
-let isHydrogenConnected = false;
+let isExecutorConnected = false;
+let selectedExecutor = 'hydrogen';
 
 async function checkHydrogenConnection() {
   const START_PORT = 6969;
@@ -19,19 +21,24 @@ async function checkHydrogenConnection() {
       } catch (e) { }
   }
   
-  if (connectedNow !== isHydrogenConnected) {
-      isHydrogenConnected = connectedNow;
-      discordRPC.updateConnectionStatus(connectedNow);
-  }
   return connectedNow;
 }
 
-async function executeScript(scriptContent) {
+function normalizeExecutor(executor) {
+  return executor === 'macsploit' ? 'macsploit' : 'hydrogen';
+}
+
+async function checkSelectedExecutorConnection() {
+  if (selectedExecutor === 'macsploit') {
+    return macsploitAPI.checkMacsploitConnection();
+  }
+  return checkHydrogenConnection();
+}
+
+async function executeThroughHydrogen(scriptContent) {
   const START_PORT = 6969;
   const END_PORT = 7069;
   let serverPort = null;
-
-  discordRPC.updateActivity({ details: 'Executing a script' });
 
   for (let port = START_PORT; port <= END_PORT; port++) {
       try {
@@ -44,8 +51,7 @@ async function executeScript(scriptContent) {
   }
 
   if (!serverPort) {
-      discordRPC.updateActivity();
-      return { success: false, message: `Could not connect to Hydrogen. Try restarting Hydrogen or Roblox.` };
+      return { success: false, message: 'Could not connect to Hydrogen. Try restarting Hydrogen or Roblox.' };
   }
 
   try {
@@ -58,16 +64,25 @@ async function executeScript(scriptContent) {
 
       if (response.ok) {
           const resultText = await response.text();
-          discordRPC.updateActivity();
           return { success: true, message: `Script submitted successfully: ${resultText}` };
       } else {
           const errorText = await response.text();
-          discordRPC.updateActivity();
           return { success: false, message: `HTTP ${response.status}: ${errorText}` };
       }
   } catch (error) {
-      discordRPC.updateActivity();
       return { success: false, message: error.message };
+  }
+}
+
+async function executeScript(scriptContent) {
+  discordRPC.updateActivity({ details: 'Executing a script' });
+  try {
+    if (selectedExecutor === 'macsploit') {
+      return await macsploitAPI.executeScript(scriptContent);
+    }
+    return await executeThroughHydrogen(scriptContent);
+  } finally {
+    discordRPC.updateActivity();
   }
 }
 
@@ -76,14 +91,35 @@ ipcMain.handle('execute-script', async (event, scriptContent) => {
 });
 
 ipcMain.handle('check-connection', async () => {
-  return await checkHydrogenConnection();
+  const connectedNow = await checkSelectedExecutorConnection();
+
+  if (connectedNow !== isExecutorConnected) {
+      isExecutorConnected = connectedNow;
+      discordRPC.updateConnectionStatus(connectedNow);
+  }
+
+  return connectedNow;
+});
+
+ipcMain.handle('set-selected-executor', async (event, executor) => {
+  selectedExecutor = normalizeExecutor(executor);
+  const connectedNow = await checkSelectedExecutorConnection();
+  if (connectedNow !== isExecutorConnected) {
+      isExecutorConnected = connectedNow;
+      discordRPC.updateConnectionStatus(connectedNow);
+  }
+  return { success: true, executor: selectedExecutor };
+});
+
+ipcMain.handle('get-selected-executor', () => {
+  return selectedExecutor;
 });
 
 function initialize() {
 }
 
 function getConnectionStatus() {
-    return isHydrogenConnected;
+    return isExecutorConnected;
 }
 
 module.exports = {

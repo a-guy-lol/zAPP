@@ -1,9 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const fetch = require('node-fetch');
 const { ipcMain } = require('electron');
 const hydrogenAPI = require('./hydrogen-api');
-const zexiumAPI = require('./zexium-api');
 
 ipcMain.handle('get-scripts', async () => {
     try {
@@ -73,7 +71,7 @@ ipcMain.handle('get-scripts', async () => {
     }
 });
 
-ipcMain.handle('execute-hub-script', async (event, scriptPath, useZexiumAPI = false, savedKey = null) => {
+ipcMain.handle('execute-hub-script', async (event, scriptPath, savedKey = null) => {
     try {
         const luaFile = path.join(scriptPath, 'script.lua');
         if (!fs.existsSync(luaFile)) {
@@ -98,10 +96,6 @@ loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/730854e5b6499e
             if (savedKey && savedKey.trim()) {
                 scriptContent = `script_key="${savedKey}";\n${scriptContent}`;
             }
-        }
-        
-        if (useZexiumAPI) {
-            return await zexiumAPI.executeScriptThroughZexium(scriptContent);
         }
         
         return await hydrogenAPI.executeScript(scriptContent);

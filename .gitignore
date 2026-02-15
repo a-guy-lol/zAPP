@@ -10,3 +10,5 @@ dist/
 context.md
 
 .context
+# Local app runtime data
+dev-data/

@@ -100,21 +100,18 @@ window.executeHubScript = async function(scriptPath, scriptName, scriptType) {
     try {
         // Load script settings to check for saved key
         let savedKey = '';
-        let useZexiumAPI = false;
         
         try {
             const settingsResult = await window.electronAPI.loadScriptSettings(scriptName);
             if (settingsResult.success) {
                 savedKey = settingsResult.settings.savedKey || '';
-                // Use Zexium API only if it's enabled and execute on join is enabled
-                useZexiumAPI = isZexiumAPIEnabled && settingsResult.settings.executeOnJoin;
-                console.log('Executing', scriptName, 'with key:', savedKey, 'useZexium:', useZexiumAPI); // Debug log
+                console.log('Executing', scriptName, 'with key:', savedKey); // Debug log
             }
         } catch (error) {
             console.error('Failed to load script settings:', error);
         }
         
-        const result = await window.electronAPI.executeHubScript(scriptPath, useZexiumAPI, savedKey);
+        const result = await window.electronAPI.executeHubScript(scriptPath, savedKey);
         if (result.success) {
             showNotification('Script executed successfully!');
         } else {

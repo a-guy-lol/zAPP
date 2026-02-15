@@ -26,6 +26,39 @@ function toggleAnimations() {
     }
 }
 
+function applyNavSpeed(speedValue) {
+    const speedMap = {
+        1: { expand: '0.38s', label: '0.3s', color: '0.24s' },  // Slow (slowest)
+        2: { expand: '0.28s', label: '0.22s', color: '0.22s' }, // Medium (old slow)
+        3: { expand: '0.16s', label: '0.14s', color: '0.16s' }  // Fast
+    };
+
+    const parsed = Number(speedValue);
+    const speed = speedMap[parsed] || speedMap[2];
+
+    document.documentElement.style.setProperty('--nav-expand-duration', speed.expand);
+    document.documentElement.style.setProperty('--nav-label-duration', speed.label);
+    document.documentElement.style.setProperty('--nav-color-duration', speed.color);
+}
+
+function toggleNavMotion() {
+    const enabled = navMotionToggle.checked;
+    window.safeStorage.setItem('zyronNavMotion', enabled);
+    navSpeedSlider.disabled = !enabled;
+
+    if (enabled) {
+        document.body.classList.remove('no-nav-motion');
+    } else {
+        document.body.classList.add('no-nav-motion');
+    }
+}
+
+function updateNavSpeed() {
+    const speedValue = Number(navSpeedSlider.value) || 2;
+    window.safeStorage.setItem('zyronNavSpeed', speedValue);
+    applyNavSpeed(speedValue);
+}
+
 function toggleEffects() {
     const enabled = document.getElementById('effects-toggle').checked;
     window.safeStorage.setItem('zyronEffects', enabled);
@@ -62,43 +95,64 @@ function toggleNotifications() {
     );
 }
 
-async function toggleZexiumAPI() {
-    const isEnabled = zexiumApiToggle.checked;
-    try {
-        await window.electronAPI.toggleZexiumAPI(isEnabled);
-        isZexiumAPIEnabled = isEnabled;
-        
-        window.safeStorage.setItem('zyronZexiumAPI', isEnabled);
-        
-        showNotification(
-            isZexiumAPIEnabled ? 'Zexium API enabled' : 'Zexium API disabled', 
-            'info'
-        );
-    
-        checkConnection();
-    } catch (error) {
-        console.error('Failed to toggle Zexium API:', error);
-        zexiumApiToggle.checked = !isEnabled;
-        showNotification('Failed to toggle Zexium API', 'error');
+async function toggleRobloxConsoleLogging() {
+    const enabled = rbxConsoleLoggingToggle.checked;
+    window.safeStorage.setItem('zyronRbxConsoleLogging', enabled);
+
+    if (typeof window.syncConsoleBridgeState === 'function') {
+        await window.syncConsoleBridgeState({ notifyOnError: true });
     }
 }
 
 function handleRenameUser() {
     document.getElementById('rename-modal-title').textContent = 'Change Name';
-    renameModalInput.value = window.safeStorage.getItem('zyronUsername') || '';
+    renameModalInput.value = (sideProfileName && sideProfileName.textContent.trim()) || window.safeStorage.getItem('zyronUsername') || '';
     renameModalOverlay.classList.remove('hidden');
     renameModalInput.focus();
 }
 
 async function confirmClearData() {
     try {
+        const cleanupScripts = TABS_DATA
+            .map((tab) => {
+                const entry = AUTOEXECUTE_DATA?.[tab.id];
+                if (!entry || !entry.serial) return null;
+                return {
+                    id: tab.id,
+                    serial: entry.serial,
+                    enabled: false,
+                    content: ''
+                };
+            })
+            .filter(Boolean);
+        if (cleanupScripts.length > 0 && window.electronAPI?.syncAutoexecuteScripts) {
+            await window.electronAPI.syncAutoexecuteScripts({
+                executor: selectedExecutor,
+                scripts: cleanupScripts
+            });
+        }
+
         const result = await window.electronAPI.clearAppData();
         if (result.success) {
             window.safeStorage.removeItem('zyronUsername');
             window.safeStorage.removeItem('zyronLastActiveTab');
             window.safeStorage.removeItem('zyronPerfMode');
             window.safeStorage.removeItem('zyronNotifications');
-            window.safeStorage.removeItem('zyronZexiumAPI');
+            window.safeStorage.removeItem('zyronNavMotion');
+            window.safeStorage.removeItem('zyronNavSpeed');
+            window.safeStorage.removeItem('zyronExecutor');
+            window.safeStorage.removeItem('zyronRbxConsoleLogging');
+            window.safeStorage.removeItem('zyronRbxConsoleAccepted');
+            window.safeStorage.removeItem('zyronProfileAvatarId');
+            window.safeStorage.removeItem('zyronNotificationHistory');
+            window.safeStorage.removeItem('zyronAvatarSalt');
+            window.safeStorage.removeItem('zyronActiveWorkspaceId');
+            window.safeStorage.removeItem('zyronAutoExecuteFolderCollapse');
+            window.safeStorage.removeItem('zyronDiscordRpc');
+
+            if (typeof window.syncConsoleBridgeState === 'function') {
+                await window.syncConsoleBridgeState({ notifyOnError: false, forceDisable: true });
+            }
             showNotification('All app data cleared successfully!', 'info');
             setTimeout(() => location.reload(), 1000);
         } else {
@@ -112,45 +166,6 @@ async function confirmClearData() {
 
 function toggleDiscordRpc() {
     const isEnabled = discordRpcToggle.checked;
+    window.safeStorage.setItem('zyronDiscordRpc', isEnabled);
     window.electronAPI.toggleDiscordRpc(isEnabled);
-}
-
-async function toggleZexiumAPI() {
-    const isEnabled = zexiumApiToggle.checked;
-    try {
-        const result = await window.electronAPI.toggleZexiumAPI(isEnabled);
-        if (result.success) {
-            isZexiumAPIEnabled = isEnabled;
-            localStorage.setItem('zyronZexiumAPI', isEnabled);
-            showNotification(isEnabled ? 'Zexium API enabled' : 'Zexium API disabled');
-            checkConnection();
-        } else {
-            showNotification('Failed to toggle Zexium API: ' + result.error, 'error');
-            zexiumApiToggle.checked = !isEnabled;
-        }
-    } catch (error) {
-        showNotification('Error toggling Zexium API: ' + error.message, 'error');
-        zexiumApiToggle.checked = !isEnabled;
-    }
-}
-
-function handleRenameUser() {
-    document.getElementById('rename-modal-title').textContent = 'Change Name';
-    renameModalInput.value = localStorage.getItem('zyronUsername') || '';
-    renameModalOverlay.classList.remove('hidden');
-    renameModalInput.focus();
-}
-
-async function confirmClearData() {
-    const result = await window.electronAPI.clearAppData();
-    if (result.success) {
-        showNotification('App data cleared. Restarting...');
-        localStorage.removeItem('zyronUsername');
-        localStorage.removeItem('zyronLastActiveTab');
-        localStorage.removeItem('zyronPerfMode');
-        localStorage.removeItem('zyronNotifications');
-        location.reload();
-    } else {
-        showNotification(`Failed to clear data: ${result.error}`, 'error');
-    }
 }

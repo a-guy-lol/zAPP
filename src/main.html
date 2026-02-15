@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="styles/components.css">
     <link rel="stylesheet" href="styles/login.css">
     <link rel="stylesheet" href="styles/editor.css">
+    <link rel="stylesheet" href="styles/console.css">
     <link rel="stylesheet" href="styles/scripthub.css">
     <link rel="stylesheet" href="styles/settings.css">
     <link rel="stylesheet" href="styles/about.css">
@@ -27,8 +28,12 @@
         <div id="login-view">
             <div id="login-card">
                 <h1>Welcome to Zyron</h1>
-                <p>Please enter your name to continue.</p>
-                <form id="login-form" style="display: flex; flex-direction: column; gap: 1rem;">
+                <p>Made by Zexon Development</p>
+                <form id="login-form" class="onboarding-form">
+                    <div>
+                        <h3 class="onboarding-section-title">Choose Profile Picture</h3>
+                        <div id="onboarding-avatar-grid" class="avatar-grid"></div>
+                    </div>
                     <input id="username-input" type="text" placeholder="Enter your name" class="form-input" required>
                     <button type="submit" class="btn">Continue</button>
                 </form>
@@ -36,6 +41,41 @@
         </div>
 
         <div id="main-app-view" class="hidden">
+            <div id="workspace-layout">
+                <aside id="left-side-panel" class="expanded">
+                    <div id="side-panel-header">
+                        <button id="side-panel-toggle-btn" class="side-panel-toggle-btn" type="button" title="Collapse side panel" aria-expanded="true">
+                            <img id="side-panel-toggle-icon" src="assets/images/expand.png" alt="" class="side-panel-toggle-icon">
+                        </button>
+                    </div>
+                    <div id="side-profile-card">
+                        <button id="side-profile-avatar" class="side-profile-avatar-btn" type="button" title="Change profile picture"></button>
+                        <div id="side-profile-meta">
+                            <span id="side-profile-name" title="Click to rename">Zyron User</span>
+                            <input id="side-profile-name-input" class="side-profile-name-input hidden" type="text" maxlength="32">
+                        </div>
+                        <button id="side-notifications-btn" class="side-notifications-btn" type="button" title="Notifications">
+                            <img src="assets/images/notification.png" alt="" class="side-notification-icon">
+                            <span id="side-notification-badge" class="side-notification-badge hidden">0</span>
+                        </button>
+                    </div>
+                    <div id="side-panel-slot-container">
+                        <div class="side-panel-slot active" data-view="editor">
+                            <div id="workspace-panel">
+                                <div class="workspace-panel-header">
+                                    <span>Workspace</span>
+                                    <button id="workspace-add-btn" type="button">+ Folder</button>
+                                </div>
+                                <div id="workspace-list" class="workspace-list"></div>
+                            </div>
+                        </div>
+                        <div class="side-panel-slot" data-view="scripts"></div>
+                        <div class="side-panel-slot" data-view="console"></div>
+                        <div class="side-panel-slot" data-view="settings"></div>
+                        <div class="side-panel-slot" data-view="about"></div>
+                    </div>
+                </aside>
+                <div id="content-column">
             <nav id="main-nav">
                 <button id="nav-editor-btn" class="main-nav-btn active" title="Editor">
                     <img src="assets/images/editIcon.png" alt="Editor" class="nav-icon">
@@ -44,6 +84,10 @@
                 <button id="nav-scripts-btn" class="main-nav-btn" title="Scripts">
                     <img src="assets/images/scriptsIcon.png" alt="Scripts" class="nav-icon">
                     <span class="nav-label">Scripts</span>
+                </button>
+                <button id="nav-console-btn" class="main-nav-btn" title="Console">
+                    <img src="assets/images/console.png" alt="Console" class="nav-icon">
+                    <span class="nav-label">Console</span>
                 </button>
                 <button id="nav-settings-btn" class="main-nav-btn" title="Settings">
                     <img src="assets/images/settingsIcon.png" alt="Settings" class="nav-icon">
@@ -60,7 +104,11 @@
                         <div id="script-tab-bar">
                             <!-- Script tabs will be inserted here by JS -->
                         </div>
-                        <input type="text" id="script-search-box" placeholder="Search scripts...">
+                        <input type="text" id="script-search-box" placeholder="Search">
+                        <button id="autoexecute-manager-btn" class="autoexecute-manager-btn" type="button">
+                            <img src="assets/images/autoexecute.png" alt="" class="autoexecute-btn-icon">
+                            <span>AutoExecute</span>
+                        </button>
                         <button id="new-tab-btn">+</button>
                     </div>
                     <div id="editor-area"></div>
@@ -79,6 +127,28 @@
                     </div>
                     <div id="script-cards-container">
                         <!-- Script cards will be loaded here -->
+                    </div>
+                </div>
+                <div id="console-pane" class="content-pane hidden">
+                    <div class="console-shell">
+                        <div class="console-shell-bar">
+                            <div class="console-shell-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                            <span class="console-shell-title">Console</span>
+                            <button id="console-clear-btn" class="console-clear-btn" type="button">Clear</button>
+                        </div>
+                        <div id="console-consent-banner" class="console-consent-banner hidden">
+                            <p>To use Roblox console in this app, you must accept that a lua file will be added into the autoexecute folder of your selected executor (MacSploit or Hydrogen). This script sends Roblox console information to the app so it can display it here.</p>
+                            <div class="console-consent-actions">
+                                <button id="console-show-path-btn" class="btn btn-secondary">Show Path</button>
+                                <button id="console-accept-btn" class="btn">Accept</button>
+                            </div>
+                        </div>
+                        <div id="console-disabled-banner" class="console-disabled-banner hidden">
+                            Roblox Console Logging is off in Settings.
+                        </div>
+                        <div id="console-log-list" class="console-log-list"></div>
                     </div>
                 </div>
                 <div id="settings-pane" class="content-pane hidden">
@@ -133,11 +203,11 @@
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-info">
-                                        <h3>Zexium API <span class="beta-label">BETA</span></h3>
-                                        <p class="setting-description">Enable API connection between Zyron and Roblox for advanced features like Execute on Join and saved keys</p>
+                                        <h3>Roblox Console Logging</h3>
+                                        <p class="setting-description">Lets you use Roblox console in the app by getting logs</p>
                                     </div>
                                     <label class="toggle-switch">
-                                        <input type="checkbox" id="zexium-api-toggle">
+                                        <input type="checkbox" id="rbx-console-logging-toggle">
                                         <span class="slider"></span>
                                     </label>
                                 </div>
@@ -154,6 +224,35 @@
                                         <input type="checkbox" id="animations-toggle" checked>
                                         <span class="slider"></span>
                                     </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Navigation Motion</h3>
+                                        <p class="setting-description">Turn this off if you want the top tabs to stay open all the time</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="nav-motion-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Navigation Speed</h3>
+                                        <p class="setting-description">How quick the top tabs open when motion is on</p>
+                                    </div>
+                                    <div class="nav-speed-control">
+                                        <input type="range" id="nav-speed-slider" min="1" max="3" step="1" value="2" list="nav-speed-marks">
+                                        <datalist id="nav-speed-marks">
+                                            <option value="1" label="Slow"></option>
+                                            <option value="2" label="Medium"></option>
+                                            <option value="3" label="Fast"></option>
+                                        </datalist>
+                                        <div class="nav-speed-labels">
+                                            <span>Slow</span>
+                                            <span>Medium</span>
+                                            <span>Fast</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <div class="setting-item">
                                     <div class="setting-info">
@@ -208,8 +307,8 @@
                         
                         <div class="about-description-card">
                             <h3>About Zyron</h3>
-                            <p>Zexon Development is a private organization, branded as Zexon, that has created projects like Zyron, Zexon Script, and other Roblox Projects. Zexon and Zyron do not collect any data whatsoever. It only connects to Hydrogen and stores data on the user's device.</p>
-                            <p>Zyron is a custom UI for the Roblox Executor named Hydrogen. Zyron is not an executor itself but a layer; it connects to Hydrogen and can execute scripts for you, providing a premium user experience.</p>
+                            <p>Zexon Development is a private organization, branded as Zexon, that has created projects like Zyron, Zexon Script, and other Roblox Projects. Zexon and Zyron do not collect any data whatsoever. It only connects to your selected executor and stores data on your device.</p>
+                            <p>Zyron is a custom UI layer for Roblox executors. Zyron is not an executor itself; it connects to Hydrogen or MacSploit so you can execute scripts with a cleaner interface.</p>
                         </div>
                         
                         <div class="changelog-section">
@@ -231,17 +330,31 @@
                         <span id="roblox-status-text">Disconnected</span>
                         <div id="roblox-status-indicator" class="status-indicator disconnected"></div>
                     </div>
-                    <div class="connection-item">
-                        <img src="assets/images/zexiumIcon.png" class="connection-icon" alt="Zexium">
-                        <span id="zexium-status-text">Disabled</span>
-                        <div id="zexium-status-indicator" class="status-indicator disconnected"></div>
+                    <div class="connection-item executor-selector" id="executor-selector">
+                        <button id="executor-selector-btn" class="executor-selector-btn" type="button" aria-expanded="false">
+                            <img id="executor-selected-icon" src="assets/images/Hydrogen.png" class="connection-icon" alt="Hydrogen">
+                            <span id="executor-selected-label">Hydrogen</span>
+                            <span class="executor-caret" aria-hidden="true"></span>
+                        </button>
+                        <div id="executor-selector-menu" class="executor-selector-menu hidden">
+                            <button class="executor-option active" type="button" data-executor="hydrogen">
+                                <img src="assets/images/Hydrogen.png" class="connection-icon" alt="Hydrogen">
+                                <span>Hydrogen</span>
+                            </button>
+                            <button class="executor-option" type="button" data-executor="macsploit">
+                                <img src="assets/images/MacSploit.png" class="connection-icon" alt="MacSploit">
+                                <span>MacSploit</span>
+                            </button>
+                        </div>
+                        <div id="executor-status-indicator" class="status-indicator disconnected"></div>
                     </div>
                     <div id="save-indicator" class="hidden">
                         <img src="assets/images/saveIcon.png" class="save-icon" alt="Saving">
                     </div>
                 </div>
-                <div id="user-display"></div>
                 <button id="execute-btn" disabled>Execute</button>
+            </div>
+                </div>
             </div>
         </div>
     </div>
@@ -319,6 +432,34 @@
     </div>
 
     <div id="notification-container"></div>
+    <div id="side-notifications-popup" class="side-notifications-popup hidden">
+        <div class="side-notifications-popup-header">
+            <span>Notifications</span>
+            <button id="side-notifications-close-btn" class="side-notifications-close-btn" type="button">Close</button>
+        </div>
+        <div id="side-notifications-list" class="side-notifications-list"></div>
+    </div>
+
+    <div id="avatar-picker-overlay" class="modal-overlay hidden">
+        <div class="modal-content avatar-picker-modal">
+            <h2>Choose Profile Picture</h2>
+            <div id="avatar-picker-grid" class="avatar-grid"></div>
+            <div class="modal-actions">
+                <button id="avatar-picker-close" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="autoexecute-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content autoexecute-modal">
+            <div class="autoexecute-modal-header">
+                <h2>AutoExecute Directory</h2>
+                <button id="autoexecute-modal-close" class="btn btn-secondary" type="button">Close</button>
+            </div>
+            <p class="autoexecute-modal-subtitle">Pick which scripts should run automatically for your selected executor.</p>
+            <div id="autoexecute-directory-list" class="autoexecute-directory-list"></div>
+        </div>
+    </div>
 
     <!-- Update Modal -->
     <div id="update-modal-overlay" class="modal-overlay hidden">
@@ -351,6 +492,7 @@
     <script src="javascripts/editor.js"></script>
     <script src="javascripts/settings.js"></script>
     <script src="javascripts/api.js"></script>
+    <script src="javascripts/console.js"></script>
     <script src="javascripts/scripthub.js"></script>
     <script src="javascripts/modals.js"></script>
     <script src="javascripts/utils.js"></script>

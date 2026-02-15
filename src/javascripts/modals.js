@@ -26,13 +26,19 @@ function saveTabRename() {
         const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
         if (tab) {
             tab.name = newName;
-            document.querySelector(`#${activeContextMenuTabId} .tab-name`).textContent = tab.name;
+            const tabNameNode = document.querySelector(`#${activeContextMenuTabId} .tab-name`);
+            if (tabNameNode) {
+                tabNameNode.textContent = tab.name;
+            }
             saveState();
         }
     } else if (newName && !activeContextMenuTabId) {
         // This is for renaming the user
-        window.safeStorage.setItem('zyronUsername', newName);
-        userDisplay.textContent = `Welcome, ${newName}`;
+        if (typeof window.persistUsername === 'function') {
+            window.persistUsername(newName);
+        } else {
+            window.safeStorage.setItem('zyronUsername', newName);
+        }
         showNotification('Name changed successfully!');
     }
     renameModalOverlay.classList.add('hidden');
@@ -80,6 +86,7 @@ function setupUpdateModal() {
 
     window.electronAPI.onUpdateAvailable((event, info) => {
         updateInfo = info;
+        resetUpdateModal();
         updateModalText.textContent = `Version ${info.version} is available. Would you like to install it now?`;
         showUpdateModal();
     });
@@ -140,7 +147,7 @@ function setupUpdateModal() {
         });
     }
 
-    updateModalYes.addEventListener('click', startUpdateDownload);
+    updateModalYes.onclick = startUpdateDownload;
     updateModalNo.addEventListener('click', hideUpdateModal);
 
     window.testUpdateModal = async () => {
@@ -152,7 +159,7 @@ function setupUpdateModal() {
             showUpdateModal();
         } catch (error) {
             console.error('Failed to fetch latest version:', error);
-            updateInfo = { version: '1.3.0' };
+            updateInfo = { version: '1.4.0' };
             updateModalText.textContent = `Version ${updateInfo.version} is available. Would you like to install it now?`;
             showUpdateModal();
         }
@@ -171,8 +178,9 @@ function setupUpdateModal() {
             
             if (result.success && result.updateInfo) {
                 console.log('Update found:', result.updateInfo);
-                if (result.updateInfo.updateInfo) {
-                    updateInfo = result.updateInfo.updateInfo;
+                const info = result.updateInfo.updateInfo || result.updateInfo;
+                if (info && info.version) {
+                    updateInfo = info;
                     updateModalText.textContent = `Version ${updateInfo.version} is available. Would you like to install it now?`;
                     showUpdateModal();
                 }
@@ -239,12 +247,6 @@ function setupScriptSettingsModal() {
 
     scriptKeyInput.addEventListener('input', debouncedSaveKey);
     executeOnJoinToggle.addEventListener('change', () => {
-        // Check if execute on join is enabled but Zexium API is disabled
-        if (executeOnJoinToggle.checked && !isZexiumAPIEnabled) {
-            showNotification('Execute on Join requires Zexium API to be enabled in Settings', 'error');
-            executeOnJoinToggle.checked = false;
-            return;
-        }
         debouncedSaveExecuteOnJoin();
     });
 
@@ -276,10 +278,6 @@ function setupScriptSettingsModal() {
         
         const showSetKey = script.type === 'paid' || script.type === 'paid-key-system' || script.type === 'paid-free';
         setKeySetting.style.display = showSetKey ? '' : 'none';
-        
-        if (executeOnJoinToggle.checked && !isZexiumAPIEnabled) {
-            showNotification('Note: Execute on Join requires Zexium API to be enabled', 'info');
-        }
         
         scriptSettingsModal.classList.remove('hidden');
     };

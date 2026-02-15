@@ -1,22 +1,67 @@
+@media (max-width: 900px) {
+    #left-side-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 210px;
+        z-index: 30;
+    }
+
+    #left-side-panel.collapsed {
+        width: 0;
+        border-right-color: transparent;
+        background: transparent;
+        backdrop-filter: none;
+    }
+
+    #left-side-panel.collapsed #side-panel-header {
+        top: 12px;
+        left: 8px;
+    }
+}
+
 @media (max-width: 800px) {
+    #main-nav {
+        gap: 10px;
+        padding: 11px 10px;
+    }
+
+    .main-nav-btn {
+        width: 42px;
+        height: 42px;
+    }
+
+    .main-nav-btn:hover,
+    .main-nav-btn.active,
+    body.no-nav-motion .main-nav-btn {
+        width: 108px;
+    }
+
     .scripts-header h1 {
         font-size: 1.4rem;
     }
-    
-    .scripts-controls {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0.8rem;
+
+    .autoexecute-manager-btn span {
+        display: none;
     }
     
     #script-cards-container {
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 1rem;
         padding: 1rem;
+    }
+
+    .script-thumbnail {
+        height: 120px;
     }
 }
 
 @media (max-width: 600px) {
+    #left-side-panel {
+        width: 185px;
+    }
+
     .scripts-header h1 {
         font-size: 1.2rem;
     }
@@ -31,11 +76,48 @@
         width: 100%;
         max-width: none;
     }
+
+    .autoexecute-modal {
+        width: min(95vw, 95vw);
+        max-width: min(95vw, 95vw);
+    }
+
+    .avatar-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .side-notifications-popup {
+        width: min(300px, calc(100vw - 20px));
+        left: 10px !important;
+        right: 10px;
+    }
 }
 
 @media (max-width: 400px) {
+    #left-side-panel {
+        width: 170px;
+    }
+
+    #main-nav {
+        gap: 8px;
+        padding: 10px 8px;
+    }
+
+    .main-nav-btn {
+        width: 40px;
+        height: 40px;
+        padding: 8px;
+    }
+
+    .main-nav-btn:hover,
+    .main-nav-btn.active,
+    body.no-nav-motion .main-nav-btn {
+        width: 98px;
+        gap: 6px;
+    }
+
     .scripts-header {
-        padding: 1rem;
+        padding: 0.8rem;
     }
     
     .scripts-header h1 {

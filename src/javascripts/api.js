@@ -11,26 +11,9 @@ async function checkConnection() {
         robloxStatusIndicator.classList.add('disconnected');
         robloxStatusText.textContent = 'Disconnected';
     }
-    
-    const zexiumStatus = await window.electronAPI.getZexiumAPIStatus();
-    
-    if (!zexiumStatus.enabled) {
-        zexiumStatusIndicator.classList.remove('connected', 'disconnected', 'pending');
-        zexiumStatusIndicator.classList.add('disabled');
-        zexiumStatusText.textContent = 'Disabled';
-    } else if (zexiumStatus.clientConnected) {
-        zexiumStatusIndicator.classList.remove('disconnected', 'disabled', 'pending');
-        zexiumStatusIndicator.classList.add('connected');
-        zexiumStatusText.textContent = 'Connected';
-    } else if (zexiumStatus.serverRunning) {
-        zexiumStatusIndicator.classList.remove('connected', 'disabled', 'disconnected');
-        zexiumStatusIndicator.classList.add('pending');
-        zexiumStatusText.textContent = 'Pending';
-    } else {
-        zexiumStatusIndicator.classList.remove('connected', 'disabled', 'pending');
-        zexiumStatusIndicator.classList.add('disconnected');
-        zexiumStatusText.textContent = 'Disconnected';
-    }
+
+    executorStatusIndicator.classList.remove('connected', 'disconnected');
+    executorStatusIndicator.classList.add(isRobloxConnected ? 'connected' : 'disconnected');
 }
 
 async function loadChangelog() {

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly APPLICATION_NAME="Zyron"
-readonly APPLICATION_VERSION="1.3.1"
+readonly APPLICATION_VERSION="1.4.0"
 readonly SOURCE_USER="a-guy-lol"
 readonly SOURCE_REPOSITORY="zAPP"
 readonly TARGET_DIRECTORY="/Applications"
@@ -214,7 +214,10 @@ if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
     fi
 fi
 
-INSTALLER_PACKAGE=$(find dist -name "*.dmg" -print -quit)
+INSTALLER_PACKAGE=$(find dist -name "*.zip" -print -quit)
+if [ -z "$INSTALLER_PACKAGE" ]; then
+    INSTALLER_PACKAGE=$(find dist -name "*.dmg" -print -quit)
+fi
 
 if [ -z "$INSTALLER_PACKAGE" ]; then
     display_error "Installation package not found in build output"
@@ -240,20 +243,42 @@ if [ -d "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" ]; then
 fi
 
 display_info "Installing application to system directory..."
-VOLUME_MOUNT=$(hdiutil attach -nobrowse -noautoopen "$INSTALLER_PACKAGE" 2>/dev/null | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
-if [ -z "$VOLUME_MOUNT" ]; then
-    display_error "Failed to mount installation package"
-    exit 1
-fi
+if [[ "$INSTALLER_PACKAGE" == *.zip ]]; then
+    EXTRACT_DIR=$(mktemp -d)
+    ditto -x -k "$INSTALLER_PACKAGE" "$EXTRACT_DIR" > /dev/null 2>&1
+    APP_BUNDLE=$(find "$EXTRACT_DIR" -name "${APPLICATION_NAME}.app" -type d -print -quit)
+    if [ -z "$APP_BUNDLE" ]; then
+        APP_BUNDLE=$(find "$EXTRACT_DIR" -name "*.app" -type d -print -quit)
+    fi
+    if [ -z "$APP_BUNDLE" ]; then
+        rm -rf "$EXTRACT_DIR"
+        display_error "Application bundle not found in zip package"
+        exit 1
+    fi
 
-sudo ditto -rsrc "${VOLUME_MOUNT}/${APPLICATION_NAME}.app" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" > /dev/null 2>&1
-if [ $? -ne 0 ]; then
-    display_error "Application installation failed"
+    sudo ditto -rsrc "$APP_BUNDLE" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        rm -rf "$EXTRACT_DIR"
+        display_error "Application installation failed"
+        exit 1
+    fi
+    rm -rf "$EXTRACT_DIR"
+else
+    VOLUME_MOUNT=$(hdiutil attach -nobrowse -noautoopen "$INSTALLER_PACKAGE" 2>/dev/null | grep /Volumes/ | sed 's/.*\/Volumes\//\/Volumes\//')
+    if [ -z "$VOLUME_MOUNT" ]; then
+        display_error "Failed to mount installation package"
+        exit 1
+    fi
+
+    sudo ditto -rsrc "${VOLUME_MOUNT}/${APPLICATION_NAME}.app" "${TARGET_DIRECTORY}/${APPLICATION_NAME}.app" > /dev/null 2>&1
+    if [ $? -ne 0 ]; then
+        display_error "Application installation failed"
+        hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
+        exit 1
+    fi
+
     hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
-    exit 1
 fi
-
-hdiutil detach "$VOLUME_MOUNT" -force >/dev/null 2>&1
 display_success "Application installed successfully"
 
 display_info "Cleaning up temporary files..."

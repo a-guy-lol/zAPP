@@ -10,26 +10,39 @@
 #script-tab-container {
     display: flex;
     align-items: center;
-    padding: 0.5rem 1rem;
+    padding: 0.45rem 0.8rem;
     flex-shrink: 0;
-    gap: 0.5rem;
+    gap: 0.4rem;
     border-bottom: 1px solid var(--border-color);
 }
 
 #script-tab-bar {
     display: flex;
-    flex-grow: 1;
-    gap: 0.5rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.35rem;
     overflow-x: auto;
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 #script-tab-bar::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
+    height: 6px;
+}
+#script-tab-bar::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 999px;
+}
+#script-tab-bar::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 999px;
+    border: 2px solid rgba(8, 8, 8, 0.5);
+}
+#script-tab-bar::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
 }
 
 .script-tab {
-    padding: 0.5rem 1.5rem; /* Adjusted padding */
+    padding: 0.4rem 0.75rem;
     cursor: pointer;
     background-color: var(--tab-bg);
     border: 1px solid var(--border-color);
@@ -39,31 +52,32 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
+    gap: 7px;
     flex-shrink: 0; /* Prevent tabs from shrinking */
+    max-width: 180px;
 }
 .script-tab.dragging {
     opacity: 0.5;
 }
 .script-tab:hover { 
-    background-color: rgba(255, 255, 255, 0.1); 
+    background-color: rgba(255, 255, 255, 0.07); 
     color: var(--text-main);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.24);
 }
 .script-tab.active {
-    background-color: var(--active-tab-bg);
+    background-color: rgba(255, 255, 255, 0.14);
     color: var(--text-main);
     font-weight: 600;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: rgba(255, 255, 255, 0.42);
 }
 .tab-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.close-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 1.2rem; opacity: 0.6; padding: 0; line-height: 1; }
+.close-btn { background: none; border: none; color: inherit; cursor: pointer; font-size: 1rem; opacity: 0.6; padding: 0; line-height: 1; }
 .close-btn:hover { opacity: 1; }
 #new-tab-btn {
     border: none;
     background: transparent;
     color: var(--text-muted);
-    padding: 0.5rem 1rem;
+    padding: 0.4rem 0.7rem;
     border-radius: 5px;
     cursor: pointer;
     font-size: 1.5rem;
@@ -76,14 +90,53 @@
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     color: var(--text-main);
-    padding: 8px 12px;
+    padding: 7px 9px;
     border-radius: 6px;
-    margin-left: auto; /* Pushes to the right */
-    width: 200px;
+    width: 96px;
+    min-width: 84px;
+    flex: 0 0 auto;
+    font-size: 12px;
 }
 #script-search-box:focus {
     outline: none;
     border-color: var(--accent-color);
+}
+
+.tab-name-input {
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    background: rgba(0, 0, 0, 0.44);
+    color: var(--text-main);
+    border-radius: 5px;
+    padding: 4px 6px;
+    width: 130px;
+    font-size: 13px;
+    outline: none;
+}
+
+.autoexecute-manager-btn {
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+    border-radius: 7px;
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.autoexecute-manager-btn:hover {
+    border-color: rgba(255, 255, 255, 0.44);
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.autoexecute-btn-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
 }
 
 
@@ -92,17 +145,32 @@
 .ace_editor, .ace_editor .ace_gutter { background-color: transparent !important; }
 
 #execute-btn {
-    background: white;
-    color: black;
-    border: none;
-    padding: 10px 25px;
-    font-size: 16px;
-    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #f3f4f6;
+    border: 1px solid rgba(255, 255, 255, 0.36);
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border-radius: 9px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.33);
 }
 #execute-btn:hover:not(:disabled) {
-    background: #ddd;
-    box-shadow: 0 0 10px rgba(255,255,255,0.5);
+    background: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.52);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
 }
-#execute-btn:disabled { background: #888; cursor: not-allowed; }
+#execute-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.34);
+}
+#execute-btn:disabled {
+    background: rgba(148, 163, 184, 0.2);
+    color: rgba(229, 231, 235, 0.56);
+    border-color: rgba(148, 163, 184, 0.28);
+    box-shadow: none;
+    cursor: not-allowed;
+}

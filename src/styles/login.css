@@ -9,14 +9,43 @@
     background: rgba(10, 10, 10, 0.96);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 40px;
+    padding: 28px 30px;
     border-radius: 10px;
     text-align: center;
     color: white;
-    width: 400px;
+    width: min(560px, calc(100vw - 40px));
+    box-sizing: border-box;
 }
-#login-card h1 { font-size: 36px; margin-bottom: 20px; color: white; }
-#login-card p { font-size: 16px; color: var(--text-muted); margin-bottom: 30px; }
+#login-card h1 { font-size: 34px; margin-bottom: 10px; color: white; }
+#login-card p { font-size: 15px; color: var(--text-muted); margin-bottom: 20px; }
+
+.onboarding-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.onboarding-section-title {
+    margin: 0 0 10px;
+    text-align: left;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.25px;
+}
+
+#onboarding-avatar-grid {
+    margin-bottom: 6px;
+}
+
+#onboarding-avatar-grid .avatar-choice {
+    padding: 8px 6px;
+}
+
+#onboarding-avatar-grid .avatar-choice-label {
+    font-size: 10px;
+}
+
 .form-input {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);

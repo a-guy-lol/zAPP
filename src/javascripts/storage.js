@@ -1,53 +1,50 @@
-// Storage utility that respects development mode
-// In development mode, localStorage operations are no-ops
+// Safe localStorage wrapper with in-memory fallback.
+let memoryStorage = {};
 
-let isDev = false;
-let devStorage = {};
-
-// Initialize development mode check
-(async function initDevMode() {
+function getStorageBackend() {
     try {
-        isDev = await window.electronAPI.isDevelopment();
-        console.log(`Running in ${isDev ? 'development' : 'production'} mode`);
-        if (isDev) {
-            console.log('Development mode: localStorage operations will be disabled');
-        }
+        const testKey = '__zyron_storage_test__';
+        localStorage.setItem(testKey, '1');
+        localStorage.removeItem(testKey);
+        return localStorage;
     } catch (error) {
-        console.error('Failed to check development mode:', error);
+        console.warn('localStorage unavailable, using in-memory storage:', error);
+        return null;
     }
-})();
+}
 
-// Safe localStorage wrapper
+const storageBackend = getStorageBackend();
+
 const safeStorage = {
     getItem: function(key) {
-        if (isDev) {
-            return devStorage[key] || null;
+        if (storageBackend) {
+            return storageBackend.getItem(key);
         }
-        return localStorage.getItem(key);
+        return Object.prototype.hasOwnProperty.call(memoryStorage, key) ? memoryStorage[key] : null;
     },
-    
+
     setItem: function(key, value) {
-        if (isDev) {
-            devStorage[key] = value;
+        if (storageBackend) {
+            storageBackend.setItem(key, value);
             return;
         }
-        localStorage.setItem(key, value);
+        memoryStorage[key] = String(value);
     },
-    
+
     removeItem: function(key) {
-        if (isDev) {
-            delete devStorage[key];
+        if (storageBackend) {
+            storageBackend.removeItem(key);
             return;
         }
-        localStorage.removeItem(key);
+        delete memoryStorage[key];
     },
-    
+
     clear: function() {
-        if (isDev) {
-            devStorage = {};
+        if (storageBackend) {
+            storageBackend.clear();
             return;
         }
-        localStorage.clear();
+        memoryStorage = {};
     }
 };
 
