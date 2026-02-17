@@ -29,8 +29,23 @@ function createDefaultData() {
                 tabOrder: []
             }
         ],
-        autoExecute: {}
+        autoExecute: {},
+        preferences: {}
     };
+}
+
+function normalizePreferences(rawPreferences) {
+    if (!rawPreferences || typeof rawPreferences !== 'object') {
+        return {};
+    }
+    const normalized = {};
+    Object.entries(rawPreferences).forEach(([key, value]) => {
+        if (typeof key !== 'string') return;
+        if (!key.trim()) return;
+        if (value === null || typeof value === 'undefined') return;
+        normalized[key] = String(value);
+    });
+    return normalized;
 }
 
 function ensureWorkspaceSchema(data) {
@@ -44,6 +59,7 @@ function ensureWorkspaceSchema(data) {
     const autoExecute = source.autoExecute && typeof source.autoExecute === 'object'
         ? source.autoExecute
         : {};
+    const preferences = normalizePreferences(source.preferences);
 
     let workspaces = Array.isArray(source.workspaces) ? source.workspaces : [];
     if (workspaces.length === 0) {
@@ -101,7 +117,8 @@ function ensureWorkspaceSchema(data) {
         scriptSettings,
         username,
         workspaces: normalizedWorkspaces,
-        autoExecute
+        autoExecute,
+        preferences
     };
 }
 
@@ -314,7 +331,148 @@ ipcMain.handle('get-changelog', async () => {
     }
 });
 
-ipcMain.handle('save-script-settings', async (event, scriptName, settings) => {
+ipcMain.handle('get-app-data-file-size', async () => {
+    try {
+        if (!fs.existsSync(DATA_FILE)) {
+            return { success: true, bytes: 0 };
+        }
+        const stats = fs.statSync(DATA_FILE);
+        return { success: true, bytes: Math.max(0, Number(stats.size) || 0) };
+    } catch (error) {
+        console.error('Failed to read app data file size:', error);
+        return { success: false, error: error.message, bytes: 0 };
+    }
+});
+
+ipcMain.handle('preferences-get-all', async () => {
+    try {
+        const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+        const data = result.data || createDefaultData();
+        return {
+            success: true,
+            preferences: normalizePreferences(data.preferences)
+        };
+    } catch (error) {
+        console.error('Error loading preferences:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('preferences-set-many', async (event, updates) => {
+    try {
+        const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        const data = result.data || createDefaultData();
+        const existingPreferences = normalizePreferences(data.preferences);
+        const normalizedUpdates = normalizePreferences(updates);
+        data.preferences = {
+            ...existingPreferences,
+            ...normalizedUpdates
+        };
+
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        return saveResult.success
+            ? { success: true, preferences: data.preferences }
+            : saveResult;
+    } catch (error) {
+        console.error('Error saving preferences:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('preferences-set', async (event, key, value) => {
+    try {
+        if (typeof key !== 'string' || !key.trim()) {
+            return { success: false, error: 'Invalid preference key.' };
+        }
+
+        const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        const data = result.data || createDefaultData();
+        const preferences = normalizePreferences(data.preferences);
+        preferences[key] = String(value);
+        data.preferences = preferences;
+
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        return saveResult.success
+            ? { success: true, key, value: preferences[key] }
+            : saveResult;
+    } catch (error) {
+        console.error('Error saving preference key:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('preferences-remove', async (event, key) => {
+    try {
+        if (typeof key !== 'string' || !key.trim()) {
+            return { success: false, error: 'Invalid preference key.' };
+        }
+
+        const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        const data = result.data || createDefaultData();
+        const preferences = normalizePreferences(data.preferences);
+        delete preferences[key];
+        data.preferences = preferences;
+
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        return saveResult.success
+            ? { success: true, key }
+            : saveResult;
+    } catch (error) {
+        console.error('Error removing preference key:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('preferences-clear', async () => {
+    try {
+        const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
+        const data = result.data || createDefaultData();
+        data.preferences = {};
+
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        return saveResult.success ? { success: true } : saveResult;
+    } catch (error) {
+        console.error('Error clearing preferences:', error);
+        return { success: false, error: error.message };
+    }
+});
+
+function resolveScriptSettingKeys(scriptRef) {
+    if (scriptRef && typeof scriptRef === 'object') {
+        const scriptId = typeof scriptRef.scriptId === 'string' ? scriptRef.scriptId.trim() : '';
+        const scriptName = typeof scriptRef.scriptName === 'string' ? scriptRef.scriptName.trim() : '';
+        const primaryKey = scriptId || scriptName;
+        const fallbackKeys = [];
+        if (scriptName && scriptName !== primaryKey) {
+            fallbackKeys.push(scriptName);
+        }
+        return { primaryKey, fallbackKeys };
+    }
+
+    const scriptName = typeof scriptRef === 'string' ? scriptRef.trim() : '';
+    return { primaryKey: scriptName, fallbackKeys: [] };
+}
+
+ipcMain.handle('save-script-settings', async (event, scriptRef, settings) => {
     try {
         const result = await loadAppData();
         let data = result.data;
@@ -326,8 +484,18 @@ ipcMain.handle('save-script-settings', async (event, scriptName, settings) => {
         if (!data.scriptSettings) {
             data.scriptSettings = {};
         }
-        
-        data.scriptSettings[scriptName] = settings;
+
+        const { primaryKey, fallbackKeys } = resolveScriptSettingKeys(scriptRef);
+        if (!primaryKey) {
+            return { success: false, error: 'Invalid script reference.' };
+        }
+
+        data.scriptSettings[primaryKey] = settings;
+        fallbackKeys.forEach((key) => {
+            if (key && key !== primaryKey && data.scriptSettings[key]) {
+                delete data.scriptSettings[key];
+            }
+        });
         
         const saveResult = await saveAppData(data);
         return saveResult;
@@ -337,14 +505,27 @@ ipcMain.handle('save-script-settings', async (event, scriptName, settings) => {
     }
 });
 
-ipcMain.handle('load-script-settings', async (event, scriptName) => {
+ipcMain.handle('load-script-settings', async (event, scriptRef) => {
     try {
         const result = await loadAppData();
         if (!result.success || !result.data) {
             return { success: true, settings: null };
         }
-        
-        const settings = result.data.scriptSettings?.[scriptName] || null;
+
+        const { primaryKey, fallbackKeys } = resolveScriptSettingKeys(scriptRef);
+        if (!primaryKey) {
+            return { success: true, settings: null };
+        }
+
+        let settings = result.data.scriptSettings?.[primaryKey] || null;
+        if (!settings) {
+            for (const key of fallbackKeys) {
+                if (!key) continue;
+                settings = result.data.scriptSettings?.[key] || null;
+                if (settings) break;
+            }
+        }
+
         return { success: true, settings };
     } catch (error) {
         console.error('Error loading script settings:', error);

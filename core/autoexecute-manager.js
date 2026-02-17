@@ -22,18 +22,34 @@ function normalizeSerial(serial) {
     return String(Math.floor(parsed));
 }
 
-function getFileNameForSerial(serial) {
-    return `zyron-${serial}.txt`;
+function normalizeScriptId(scriptId) {
+    if (typeof scriptId !== 'string') return null;
+    const normalized = scriptId
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9_-]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+    return normalized || null;
 }
 
-function writeAutoexecuteScript(folderPath, serial, scriptContent) {
-    const fileName = getFileNameForSerial(serial);
+function resolveEntryId(entry = {}) {
+    const serial = normalizeSerial(entry.serial);
+    if (serial) return serial;
+    return normalizeScriptId(entry.scriptId);
+}
+
+function getFileNameForId(id) {
+    return `zyron-${id}.txt`;
+}
+
+function writeAutoexecuteScript(folderPath, id, scriptContent) {
+    const fileName = getFileNameForId(id);
     const filePath = path.join(folderPath, fileName);
     fs.writeFileSync(filePath, String(scriptContent || ''), 'utf8');
 }
 
-function removeAutoexecuteScript(folderPath, serial) {
-    const fileName = getFileNameForSerial(serial);
+function removeAutoexecuteScript(folderPath, id) {
+    const fileName = getFileNameForId(id);
     const filePath = path.join(folderPath, fileName);
     if (!fs.existsSync(filePath)) return;
     fs.unlinkSync(filePath);
@@ -52,31 +68,31 @@ function syncAutoexecuteScripts(payload = {}) {
     }
 
     const scripts = Array.isArray(payload.scripts) ? payload.scripts : [];
-    const touchedSerials = [];
+    const touchedIds = [];
 
     try {
         scripts.forEach((entry) => {
             if (!entry || typeof entry !== 'object') return;
-            const serial = normalizeSerial(entry.serial);
-            if (!serial) return;
-            touchedSerials.push(serial);
+            const id = resolveEntryId(entry);
+            if (!id) return;
+            touchedIds.push(id);
 
             const enabled = Boolean(entry.enabled);
             const scriptContent = typeof entry.content === 'string' ? entry.content : '';
 
             if (enabled) {
-                writeAutoexecuteScript(activePath, serial, scriptContent);
-                removeAutoexecuteScript(inactivePath, serial);
+                writeAutoexecuteScript(activePath, id, scriptContent);
+                removeAutoexecuteScript(inactivePath, id);
             } else {
-                removeAutoexecuteScript(activePath, serial);
-                removeAutoexecuteScript(inactivePath, serial);
+                removeAutoexecuteScript(activePath, id);
+                removeAutoexecuteScript(inactivePath, id);
             }
         });
 
         return {
             success: true,
             executor: selectedExecutor,
-            syncedScripts: touchedSerials.length
+            syncedScripts: touchedIds.length
         };
     } catch (error) {
         return {

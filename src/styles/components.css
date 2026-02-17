@@ -606,8 +606,7 @@ input:checked + .slider:before {
     border: 1px solid rgba(255, 255, 255, 0.35);
     overflow: hidden;
     background-clip: padding-box;
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-    transform: translateZ(0);
+    isolation: isolate;
 }
 
 .avatar-choice-label {

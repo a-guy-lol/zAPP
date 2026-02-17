@@ -19,6 +19,7 @@ async function checkConnection() {
 async function loadChangelog() {
     const changelogData = await window.electronAPI.getChangelog();
     if (changelogData) {
+        window.latestChangelogVersion = changelogData.latestVersion || null;
         document.getElementById('app-version').textContent = `Build ${changelogData.latestVersion}`;
         const container = document.getElementById('changelog-container');
         container.innerHTML = '';
@@ -47,6 +48,10 @@ async function loadChangelog() {
         
         // Setup filter functionality
         setupChangelogFilters();
+
+        if (typeof window.refreshSettingsSidePanelInfo === 'function') {
+            window.refreshSettingsSidePanelInfo();
+        }
     }
 }
 

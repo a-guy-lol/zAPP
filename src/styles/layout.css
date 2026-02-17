@@ -158,8 +158,7 @@
     transition: border-color 0.18s ease, filter 0.18s ease;
     overflow: hidden;
     background-clip: padding-box;
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-    transform: translateZ(0);
+    isolation: isolate;
 }
 
 #side-profile-avatar:hover {
@@ -268,6 +267,260 @@
 
 .side-panel-slot.active {
     display: flex;
+}
+
+.side-slot-panel {
+    width: 100%;
+    min-height: 0;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-sizing: border-box;
+}
+
+.side-slot-title {
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    opacity: 0.9;
+    padding: 2px 2px 6px;
+}
+
+.side-source-btn {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 10px;
+    width: 100%;
+    cursor: pointer;
+    font: inherit;
+    transition: border-color 0.18s ease, background-color 0.18s ease, transform 0.18s ease;
+}
+
+.side-source-btn:hover {
+    border-color: rgba(255, 255, 255, 0.32);
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-1px);
+}
+
+.side-source-btn.active {
+    border-color: rgba(255, 255, 255, 0.48);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.side-source-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.side-source-label {
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 500;
+    text-align: left;
+}
+
+.side-source-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.side-source-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
+    gap: 1px;
+    flex: 1;
+}
+
+.side-source-subtitle {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 500;
+    opacity: 0.9;
+}
+
+.side-source-marker {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.side-source-footnote {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: 10px;
+    line-height: 1.35;
+    opacity: 0.84;
+}
+
+.side-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.side-info-row {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 9px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.side-info-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.side-info-value {
+    color: var(--text-main);
+    font-size: 11px;
+    font-weight: 600;
+    max-width: 108px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-align: right;
+}
+
+.console-side-status {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.console-side-status-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.console-side-status-value {
+    color: var(--text-main);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.console-side-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+}
+
+.console-side-card {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.console-side-card-label {
+    color: var(--text-muted);
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.console-side-card-value {
+    color: var(--text-main);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.console-side-executor-row {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.console-side-executor-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.console-side-executor-value {
+    color: var(--text-main);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.about-side-card {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.about-side-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.about-side-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.14);
+}
+
+.about-side-label {
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.about-side-value {
+    color: var(--text-main);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.side-about-panel {
+    justify-content: flex-start;
+}
+
+.side-source-btn.active .side-source-marker {
+    background: rgba(255, 255, 255, 0.92);
+    border-color: rgba(255, 255, 255, 0.92);
 }
 
 #workspace-panel {
@@ -399,7 +652,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    padding: 0 0 12px;
+    padding: 0;
 }
 #main-nav {
     padding: 14px 14px;

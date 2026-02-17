@@ -159,7 +159,7 @@ function setupUpdateModal() {
             showUpdateModal();
         } catch (error) {
             console.error('Failed to fetch latest version:', error);
-            updateInfo = { version: '1.4.0' };
+            updateInfo = { version: '1.4.1' };
             updateModalText.textContent = `Version ${updateInfo.version} is available. Would you like to install it now?`;
             showUpdateModal();
         }
@@ -199,11 +199,22 @@ function setupScriptSettingsModal() {
     const scriptSettingsModal = document.getElementById('script-settings-modal-overlay');
     const scriptSettingsDone = document.getElementById('script-settings-done');
     const executeOnJoinToggle = document.getElementById('execute-on-join-toggle');
+    const executeOnJoinSetting = executeOnJoinToggle.closest('.setting-item');
     const setKeySetting = document.getElementById('set-key-setting');
     const scriptKeyInput = document.getElementById('script-key-input');
     
     let saveKeyTimeout = null;
     let saveExecuteOnJoinTimeout = null;
+
+    function getCurrentScriptRef() {
+        if (!currentScriptForSettings) {
+            return null;
+        }
+        return {
+            scriptId: currentScriptForSettings.id || '',
+            scriptName: currentScriptForSettings.name || ''
+        };
+    }
 
     // Debounced save for key changes
     function debouncedSaveKey() {
@@ -216,8 +227,11 @@ function setupScriptSettingsModal() {
                 };
                 
                 try {
-                    await window.electronAPI.saveScriptSettings(currentScriptForSettings.name, settings);
+                    await window.electronAPI.saveScriptSettings(getCurrentScriptRef(), settings);
                     console.log('Auto-saved key for', currentScriptForSettings.name);
+                    if (executeOnJoinToggle.checked && typeof window.syncAutoExecuteScripts === 'function') {
+                        await window.syncAutoExecuteScripts({ notifyOnError: true });
+                    }
                 } catch (error) {
                     console.error('Failed to auto-save script key:', error);
                 }
@@ -236,8 +250,11 @@ function setupScriptSettingsModal() {
                 };
                 
                 try {
-                    await window.electronAPI.saveScriptSettings(currentScriptForSettings.name, settings);
+                    await window.electronAPI.saveScriptSettings(getCurrentScriptRef(), settings);
                     console.log('Auto-saved execute on join for', currentScriptForSettings.name);
+                    if (typeof window.syncAutoExecuteScripts === 'function') {
+                        await window.syncAutoExecuteScripts({ notifyOnError: true });
+                    }
                 } catch (error) {
                     console.error('Failed to auto-save execute on join:', error);
                 }
@@ -264,7 +281,10 @@ function setupScriptSettingsModal() {
         scriptKeyInput.value = '';
         
         try {
-            const result = await window.electronAPI.loadScriptSettings(script.name);
+            const result = await window.electronAPI.loadScriptSettings({
+                scriptId: script.id || '',
+                scriptName: script.name
+            });
             if (result.success && result.settings) {
                 executeOnJoinToggle.checked = result.settings.executeOnJoin || false;
                 scriptKeyInput.value = result.settings.savedKey || '';
@@ -278,6 +298,12 @@ function setupScriptSettingsModal() {
         
         const showSetKey = script.type === 'paid' || script.type === 'paid-key-system' || script.type === 'paid-free';
         setKeySetting.style.display = showSetKey ? '' : 'none';
+        const supportsExecuteOnJoin = script.supportsExecuteOnJoin !== false;
+        executeOnJoinSetting.style.display = supportsExecuteOnJoin ? '' : 'none';
+        executeOnJoinToggle.disabled = !supportsExecuteOnJoin;
+        if (!supportsExecuteOnJoin) {
+            executeOnJoinToggle.checked = false;
+        }
         
         scriptSettingsModal.classList.remove('hidden');
     };

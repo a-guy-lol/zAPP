@@ -4,6 +4,9 @@ let consolePollInterval = null;
 let consoleInitialized = false;
 const MAX_RENDERED_CONSOLE_LINES = 2000;
 let consoleAutoFollow = true;
+let totalConsoleLogs = 0;
+let errorConsoleLogs = 0;
+let warnConsoleLogs = 0;
 
 function normalizeConsoleLevel(type) {
     const raw = String(type || '').toLowerCase();
@@ -56,8 +59,22 @@ function appendConsoleLine(entry) {
 
     consoleLogList.appendChild(line);
 
+    totalConsoleLogs += 1;
+    if (level === 'error') {
+        errorConsoleLogs += 1;
+    } else if (level === 'warn') {
+        warnConsoleLogs += 1;
+    }
+    emitConsoleMetricsUpdate();
+
     while (consoleLogList.children.length > MAX_RENDERED_CONSOLE_LINES) {
         consoleLogList.removeChild(consoleLogList.firstElementChild);
+    }
+}
+
+function emitConsoleMetricsUpdate() {
+    if (typeof window.updateConsoleSidePanelInfo === 'function') {
+        window.updateConsoleSidePanelInfo();
     }
 }
 
@@ -112,17 +129,20 @@ function updateConsoleAccessUI() {
     if (!consoleAccepted) {
         stopConsolePolling();
         renderConsolePlaceholder('Accept the notice above to start using Roblox console in this tab.');
+        emitConsoleMetricsUpdate();
         return;
     }
 
     if (!loggingEnabled) {
         stopConsolePolling();
         renderConsolePlaceholder('Turn on Roblox Console Logging in Settings to stream logs here.');
+        emitConsoleMetricsUpdate();
         return;
     }
 
     clearConsolePlaceholder();
     startConsolePolling();
+    emitConsoleMetricsUpdate();
 }
 
 async function syncConsoleBridgeState({ notifyOnError = false, forceDisable = false } = {}) {
@@ -189,6 +209,9 @@ async function handleConsoleClear() {
 
     consoleLastSeq = 0;
     consoleLogList.innerHTML = '';
+    totalConsoleLogs = 0;
+    errorConsoleLogs = 0;
+    warnConsoleLogs = 0;
 
     updateConsoleAccessUI();
 }
@@ -202,8 +225,18 @@ function initializeConsoleTab() {
     if (consoleInitialized) return;
     consoleInitialized = true;
 
-    consoleAccepted = window.safeStorage.getItem('zyronRbxConsoleAccepted') === 'true';
-    updateConsoleAccessUI();
+    const applyInitialConsolePreference = async () => {
+        if (window.safeStorageReady && typeof window.safeStorageReady.then === 'function') {
+            try {
+                await window.safeStorageReady;
+            } catch (error) {
+                console.error('Failed to initialize preference storage for console:', error);
+            }
+        }
+        consoleAccepted = window.safeStorage.getItem('zyronRbxConsoleAccepted') === 'true';
+        updateConsoleAccessUI();
+        syncConsoleBridgeState({ notifyOnError: false });
+    };
 
     consoleShowPathBtn.addEventListener('click', handleConsoleShowPath);
     consoleAcceptBtn.addEventListener('click', handleConsoleAccept);
@@ -212,7 +245,7 @@ function initializeConsoleTab() {
         consoleAutoFollow = isConsoleNearBottom();
     });
 
-    syncConsoleBridgeState({ notifyOnError: false });
+    applyInitialConsolePreference();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -222,3 +255,11 @@ document.addEventListener('DOMContentLoaded', () => {
 window.syncConsoleBridgeState = syncConsoleBridgeState;
 window.onExecutorSelectionChanged = onExecutorSelectionChanged;
 window.onConsoleViewShown = onConsoleViewShown;
+window.getConsoleMetrics = function getConsoleMetrics() {
+    return {
+        active: Boolean(consoleAccepted && rbxConsoleLoggingToggle.checked),
+        totalLogs: totalConsoleLogs,
+        errorLogs: errorConsoleLogs,
+        warnLogs: warnConsoleLogs
+    };
+};

@@ -149,6 +149,9 @@ async function confirmClearData() {
             window.safeStorage.removeItem('zyronActiveWorkspaceId');
             window.safeStorage.removeItem('zyronAutoExecuteFolderCollapse');
             window.safeStorage.removeItem('zyronDiscordRpc');
+            if (typeof window.safeStorageFlush === 'function') {
+                await window.safeStorageFlush();
+            }
 
             if (typeof window.syncConsoleBridgeState === 'function') {
                 await window.syncConsoleBridgeState({ notifyOnError: false, forceDisable: true });

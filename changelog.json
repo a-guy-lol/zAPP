@@ -1,6 +1,20 @@
 {
-  "latestVersion": "1.4.0",
+  "latestVersion": "1.4.1",
   "changelogs": [
+{
+  "version": "1.4.1",
+  "date": "2026-02-15",
+  "changes": [
+    "Fixed execute on join not working for scripts in Scripts tab",
+    "Migrated localstorage to be saved locally in zyronData",
+    "Added sub-pages (Zexon Scripts & ScriptBlox) to Scripts tab in side-panel",
+    "Added live stats to Console tab in side-panel",
+    "Added app information stats to Settings and About tabs in side-panel",
+    "Fixed avatar rendering bug and weird name generation (always the same)",
+    "Removed popups for everytime you execute a script"
+  ]
+},
+
 {
   "version": "1.4.0",
   "date": "2026-02-14",

@@ -49,14 +49,28 @@ const AUTOEXECUTE_MODAL_RENDER_LIMIT = 500;
 let selectedAvatarId = DEFAULT_AVATAR_ID;
 let notificationHistory = [];
 let sideProfileEditing = false;
-let avatarInstanceSalt = null;
 let autoexecuteCollapsedFolders = {};
+let appBuildVersion = null;
+let latestChangelogVersion = null;
+let isDevelopmentBuild = false;
+let appDataFileSizeBytes = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initApp, 100);
 });
 
 async function initApp() {
+    if (window.safeStorageReady && typeof window.safeStorageReady.then === 'function') {
+        try {
+            await window.safeStorageReady;
+        } catch (error) {
+            console.error('Preference store initialization failed:', error);
+        }
+    }
+
+    await refreshSettingsSidePanelInfo();
+    updateConsoleSidePanelInfo();
+
     let username = null;
     try {
         const usernameResult = await window.electronAPI.loadUsername();
@@ -242,6 +256,9 @@ async function initApp() {
         try {
             await saveState();
             window.safeStorage.setItem('zyronExecutor', selectedExecutor);
+            if (typeof window.safeStorageFlush === 'function') {
+                await window.safeStorageFlush();
+            }
             await window.electronAPI.setSelectedExecutor(selectedExecutor);
             await syncAutoExecuteScripts({ notifyOnError: false });
         } catch (error) {
@@ -254,50 +271,138 @@ async function initApp() {
     setupUpdateModal();
 }
 
+function normalizeVersion(version) {
+    if (!version) return '';
+    return String(version).replace(/^v/i, '').trim();
+}
+
+function compareVersions(versionA, versionB) {
+    const a = normalizeVersion(versionA).split('.').map((value) => Number(value) || 0);
+    const b = normalizeVersion(versionB).split('.').map((value) => Number(value) || 0);
+    const length = Math.max(a.length, b.length);
+    for (let i = 0; i < length; i += 1) {
+        const diff = (a[i] || 0) - (b[i] || 0);
+        if (diff !== 0) return diff > 0 ? 1 : -1;
+    }
+    return 0;
+}
+
+function getExecutorLabel(executor = selectedExecutor) {
+    return executor === 'macsploit' ? 'MacSploit' : 'Hydrogen';
+}
+
+function formatDataSize(bytesValue) {
+    const bytes = Math.max(0, Number(bytesValue) || 0);
+    if (bytes < 1000) {
+        return `${bytes} b`;
+    }
+    if (bytes < 1000000) {
+        return `${(bytes / 1000).toFixed(2)} kb`;
+    }
+    return `${(bytes / 1000000).toFixed(2)} mb`;
+}
+
+function getBuildLatestStatus(buildVersion, latestVersion) {
+    if (!buildVersion || !latestVersion) {
+        return 'Checking';
+    }
+    const versionDiff = compareVersions(buildVersion, latestVersion);
+    return versionDiff < 0 ? 'Outdated' : 'Up to date';
+}
+
+function updateConsoleSidePanelInfo() {
+    if (!consoleSideLoggingStatus || !consoleSideTotalLogs || !consoleSideErrorLogs || !consoleSideWarnLogs) {
+        return;
+    }
+
+    const metrics = typeof window.getConsoleMetrics === 'function'
+        ? window.getConsoleMetrics()
+        : { active: false, totalLogs: 0, errorLogs: 0, warnLogs: 0 };
+
+    consoleSideLoggingStatus.textContent = metrics.active ? 'On' : 'Off';
+    consoleSideTotalLogs.textContent = String(metrics.totalLogs || 0);
+    consoleSideErrorLogs.textContent = String(metrics.errorLogs || 0);
+    consoleSideWarnLogs.textContent = String(metrics.warnLogs || 0);
+    if (consoleSideExecutor) {
+        consoleSideExecutor.textContent = getExecutorLabel();
+    }
+}
+
+function updateSettingsSidePanelInfo() {
+    if (!settingsSideBuildVersion || !settingsSideLatestVersion || !settingsSideDataSize) {
+        return;
+    }
+
+    const buildVersion = normalizeVersion(appBuildVersion);
+    const latestVersion = normalizeVersion(latestChangelogVersion || window.latestChangelogVersion);
+    const latestStatus = getBuildLatestStatus(buildVersion, latestVersion);
+
+    settingsSideBuildVersion.textContent = buildVersion
+        ? `${buildVersion}${isDevelopmentBuild ? ' Dev' : ''}`
+        : '-';
+    settingsSideDataSize.textContent = formatDataSize(appDataFileSizeBytes);
+    if (settingsSideExecutor) {
+        settingsSideExecutor.textContent = getExecutorLabel();
+    }
+
+    settingsSideLatestVersion.textContent = latestStatus;
+}
+
+function updateAboutSidePanelInfo() {
+    if (!aboutSideBuildVersion || !aboutSideLatestStatus) {
+        return;
+    }
+
+    const buildVersion = normalizeVersion(appBuildVersion);
+    const latestVersion = normalizeVersion(latestChangelogVersion || window.latestChangelogVersion);
+    const latestStatus = getBuildLatestStatus(buildVersion, latestVersion);
+
+    aboutSideBuildVersion.textContent = buildVersion
+        ? `${buildVersion}${isDevelopmentBuild ? ' Dev' : ''}`
+        : '-';
+    aboutSideLatestStatus.textContent = latestStatus;
+}
+
+async function refreshSettingsSidePanelInfo() {
+    try {
+        if (!appBuildVersion && window.electronAPI?.getAppVersion) {
+            appBuildVersion = await window.electronAPI.getAppVersion();
+        }
+        if (window.electronAPI?.isDevelopment) {
+            isDevelopmentBuild = Boolean(await window.electronAPI.isDevelopment());
+        }
+        if (window.electronAPI?.getAppDataFileSize) {
+            const sizeResult = await window.electronAPI.getAppDataFileSize();
+            if (sizeResult?.success) {
+                appDataFileSizeBytes = Number(sizeResult.bytes) || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Failed to read app version for settings side panel:', error);
+    }
+
+    latestChangelogVersion = normalizeVersion(window.latestChangelogVersion || latestChangelogVersion);
+    updateSettingsSidePanelInfo();
+    updateAboutSidePanelInfo();
+}
+
+window.updateConsoleSidePanelInfo = updateConsoleSidePanelInfo;
+window.updateSettingsSidePanelInfo = updateSettingsSidePanelInfo;
+window.updateAboutSidePanelInfo = updateAboutSidePanelInfo;
+window.refreshSettingsSidePanelInfo = refreshSettingsSidePanelInfo;
+
 function getAvatarPreset(avatarId) {
     return PROFILE_AVATAR_PRESETS.find((preset) => preset.id === avatarId) || PROFILE_AVATAR_PRESETS[0];
 }
 
-function getAvatarSalt() {
-    if (avatarInstanceSalt) return avatarInstanceSalt;
-    const existing = window.safeStorage.getItem('zyronAvatarSalt');
-    if (existing) {
-        avatarInstanceSalt = existing;
-        return avatarInstanceSalt;
-    }
-    avatarInstanceSalt = String(Math.floor(100000 + Math.random() * 900000));
-    window.safeStorage.setItem('zyronAvatarSalt', avatarInstanceSalt);
-    return avatarInstanceSalt;
-}
-
-function hashSeed(input) {
-    const source = String(input || '');
-    let hash = 2166136261;
-    for (let i = 0; i < source.length; i += 1) {
-        hash ^= source.charCodeAt(i);
-        hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
-    }
-    return Math.abs(hash >>> 0);
-}
-
-function buildAvatarBackground(presetId, identityKey) {
+function buildAvatarBackground(presetId) {
     const preset = getAvatarPreset(presetId);
-    const seed = hashSeed(`${presetId}:${identityKey}`);
     const [c0, c1, c2, c3] = preset.palette;
 
-    const x1 = 22 + (seed % 58);
-    const y1 = 18 + ((seed >> 3) % 58);
-    const x2 = 70 - ((seed >> 5) % 48);
-    const y2 = 74 - ((seed >> 8) % 42);
-    const x3 = 20 + ((seed >> 11) % 62);
-    const y3 = 66 - ((seed >> 13) % 52);
-    const angle = seed % 360;
-
     return `
-        radial-gradient(circle at ${x1}% ${y1}%, ${c3} 0%, ${c3}33 30%, transparent 58%),
-        radial-gradient(circle at ${x2}% ${y2}%, ${c2} 0%, ${c2}55 34%, transparent 62%),
-        radial-gradient(circle at ${x3}% ${y3}%, ${c1}99 0%, transparent 56%),
-        linear-gradient(${angle}deg, ${c0} 0%, ${c1} 45%, ${c2} 82%, ${c3} 100%)
+        radial-gradient(128% 118% at 28% 22%, ${c3}c7 0%, transparent 54%),
+        radial-gradient(108% 102% at 72% 80%, ${c1}73 0%, transparent 64%),
+        linear-gradient(145deg, ${c0} 0%, ${c1} 38%, ${c2} 72%, ${c3} 100%)
     `;
 }
 
@@ -352,7 +457,7 @@ function renderAvatarChoices(container, { selectedId, onSelect, compact = false 
 
         const preview = document.createElement('span');
         preview.className = 'avatar-choice-preview';
-        preview.style.background = buildAvatarBackground(preset.id, `preview-${preset.id}`);
+        preview.style.background = buildAvatarBackground(preset.id);
 
         const label = document.createElement('span');
         label.className = 'avatar-choice-label';
@@ -473,6 +578,9 @@ async function setSelectedExecutor(executor, { persist = true, notify = false } 
         showNotification(`Executor switched to ${label}`, 'info');
     }
 
+    updateConsoleSidePanelInfo();
+    updateSettingsSidePanelInfo();
+
     if (typeof window.syncConsoleBridgeState === 'function') {
         await window.syncConsoleBridgeState({ notifyOnError: notify });
     }
@@ -512,10 +620,7 @@ function updateSideProfile(name) {
 
     const avatarPreset = getAvatarPreset(selectedAvatarId);
     sideProfileAvatar.textContent = '';
-    sideProfileAvatar.style.background = buildAvatarBackground(
-        avatarPreset.id,
-        `${displayName}|${getAvatarSalt()}`
-    );
+    sideProfileAvatar.style.background = buildAvatarBackground(avatarPreset.id);
 }
 
 function startSideProfileRename() {
@@ -794,11 +899,22 @@ async function syncAutoExecuteScripts({ notifyOnError = true } = {}) {
     };
 
     try {
-        const result = await window.electronAPI.syncAutoexecuteScripts(payload);
-        if (!result.success && notifyOnError) {
-            showNotification(result.error || 'Failed to sync autoexecute scripts.', 'error');
+        const editorResult = await window.electronAPI.syncAutoexecuteScripts(payload);
+        const supportsScriptHubSync = typeof window.electronAPI.syncScriptHubAutoexecute === 'function';
+        const scriptHubResult = supportsScriptHubSync
+            ? await window.electronAPI.syncScriptHubAutoexecute({ executor: selectedExecutor })
+            : { success: true };
+
+        const failed = !editorResult.success ? editorResult : (!scriptHubResult.success ? scriptHubResult : null);
+        if (failed && notifyOnError) {
+            showNotification(failed.error || 'Failed to sync autoexecute scripts.', 'error');
         }
-        return result;
+
+        return {
+            success: !failed,
+            editorResult,
+            scriptHubResult
+        };
     } catch (error) {
         if (notifyOnError) {
             showNotification(`Autoexecute sync failed: ${error.message}`, 'error');
@@ -928,6 +1044,15 @@ window.onMainViewChanged = function onMainViewChanged(viewName) {
     sidePanelSlots.forEach((slot) => {
         slot.classList.toggle('active', slot.dataset.view === viewName);
     });
+    updateConsoleSidePanelInfo();
+    if (viewName === 'settings') {
+        refreshSettingsSidePanelInfo();
+    } else if (viewName === 'about') {
+        refreshSettingsSidePanelInfo();
+    } else {
+        updateSettingsSidePanelInfo();
+        updateAboutSidePanelInfo();
+    }
     closeNotificationPopup();
 };
 

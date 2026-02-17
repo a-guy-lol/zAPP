@@ -18,6 +18,10 @@ function switchMainView(viewName) {
     if (viewName === 'scripts') {
         scriptsPane.classList.remove('hidden');
         navScriptsBtn.classList.add('active');
+        if (typeof window.getCurrentScriptsSource === 'function'
+            && typeof window.setScriptsSource === 'function') {
+            window.setScriptsSource(window.getCurrentScriptsSource(), { persist: false });
+        }
         loadScriptCards();
     } else if (viewName === 'editor') {
         editorPane.classList.remove('hidden');

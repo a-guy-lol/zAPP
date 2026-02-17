@@ -47,9 +47,7 @@ async function executeScript() {
     executeBtn.disabled = true;
     try {
         const result = await window.electronAPI.executeScript(scriptContent);
-        if (result.success) {
-            showNotification('Script executed successfully!');
-        } else {
+        if (!result.success) {
             showNotification(`Execution failed: ${result.message}`, 'error');
         }
     } catch(e) {

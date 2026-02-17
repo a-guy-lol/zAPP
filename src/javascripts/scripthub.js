@@ -1,3 +1,70 @@
+let currentScriptsSource = 'zexon';
+
+function normalizeScriptsSource(source) {
+    return source === 'scriptblox' ? 'scriptblox' : 'zexon';
+}
+
+function applyScriptsSourceUI() {
+    const isZexon = currentScriptsSource === 'zexon';
+
+    if (scriptsZexonPage) {
+        scriptsZexonPage.classList.toggle('hidden', !isZexon);
+    }
+    if (scriptsScriptbloxPage) {
+        scriptsScriptbloxPage.classList.toggle('hidden', isZexon);
+    }
+    if (scriptsSourceZexonBtn) {
+        scriptsSourceZexonBtn.classList.toggle('active', isZexon);
+    }
+    if (scriptsSourceScriptbloxBtn) {
+        scriptsSourceScriptbloxBtn.classList.toggle('active', !isZexon);
+    }
+}
+
+function setScriptsSource(source, { persist = true } = {}) {
+    currentScriptsSource = normalizeScriptsSource(source);
+    applyScriptsSourceUI();
+
+    if (persist && window.safeStorage) {
+        window.safeStorage.setItem('zyronScriptsSource', currentScriptsSource);
+    }
+
+    if (currentScriptsSource === 'zexon') {
+        loadScriptCards();
+    }
+}
+
+async function initializeScriptsSourceNavigation() {
+    if (window.safeStorageReady && typeof window.safeStorageReady.then === 'function') {
+        try {
+            await window.safeStorageReady;
+        } catch (error) {
+            console.error('Failed to initialize script source preference:', error);
+        }
+    }
+
+    const storedSource = window.safeStorage?.getItem('zyronScriptsSource');
+    setScriptsSource(storedSource, { persist: false });
+
+    if (scriptsSourceZexonBtn) {
+        scriptsSourceZexonBtn.addEventListener('click', () => {
+            setScriptsSource('zexon', { persist: true });
+        });
+    }
+
+    if (scriptsSourceScriptbloxBtn) {
+        scriptsSourceScriptbloxBtn.addEventListener('click', () => {
+            setScriptsSource('scriptblox', { persist: true });
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+        initializeScriptsSourceNavigation();
+    }, 120);
+});
+
 function filterScriptCards() {
     const scriptHubSearch = document.getElementById('script-hub-search');
     const query = scriptHubSearch.value.toLowerCase();
@@ -36,6 +103,10 @@ function filterScriptCards() {
 }
 
 async function loadScriptCards() {
+    if (currentScriptsSource !== 'zexon') {
+        return;
+    }
+
     const container = document.getElementById('script-cards-container');
     try {
         const scripts = await window.electronAPI.getScripts();
@@ -78,7 +149,7 @@ function createScriptCard(script) {
         <div class="script-info">
             <h3 class="script-title">${script.name}</h3>
             <p class="script-description">${script.description || 'No description available.'}</p>
-            <button class="script-execute-btn" onclick="executeHubScript('${script.path}', '${script.name}', '${script.type}')">Execute</button>
+            <button class="script-execute-btn" onclick="executeHubScript('${script.path}', '${script.name}', '${script.type}', '${script.id || ''}')">Execute</button>
         </div>
     `;
     
@@ -96,14 +167,17 @@ function getTypeBadge(type) {
     return badges[type] || badges['free'];
 }
 
-window.executeHubScript = async function(scriptPath, scriptName, scriptType) {
+window.executeHubScript = async function(scriptPath, scriptName, scriptType, scriptId = '') {
     try {
         // Load script settings to check for saved key
         let savedKey = '';
         
         try {
-            const settingsResult = await window.electronAPI.loadScriptSettings(scriptName);
-            if (settingsResult.success) {
+            const settingsResult = await window.electronAPI.loadScriptSettings({
+                scriptId,
+                scriptName
+            });
+            if (settingsResult.success && settingsResult.settings) {
                 savedKey = settingsResult.settings.savedKey || '';
                 console.log('Executing', scriptName, 'with key:', savedKey); // Debug log
             }
@@ -112,12 +186,13 @@ window.executeHubScript = async function(scriptPath, scriptName, scriptType) {
         }
         
         const result = await window.electronAPI.executeHubScript(scriptPath, savedKey);
-        if (result.success) {
-            showNotification('Script executed successfully!');
-        } else {
+        if (!result.success) {
             showNotification(`Execution failed: ${result.message}`, 'error');
         }
     } catch (error) {
         showNotification(`Execution error: ${error.message}`, 'error');
     }
 };
+
+window.setScriptsSource = setScriptsSource;
+window.getCurrentScriptsSource = () => currentScriptsSource;

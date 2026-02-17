@@ -69,10 +69,99 @@
                                 <div id="workspace-list" class="workspace-list"></div>
                             </div>
                         </div>
-                        <div class="side-panel-slot" data-view="scripts"></div>
-                        <div class="side-panel-slot" data-view="console"></div>
-                        <div class="side-panel-slot" data-view="settings"></div>
-                        <div class="side-panel-slot" data-view="about"></div>
+                        <div class="side-panel-slot" data-view="scripts">
+                            <div class="side-slot-panel side-scripts-panel">
+                                <div class="side-slot-title">Script Sources</div>
+                                <div class="side-source-stack">
+                                    <button id="scripts-source-zexon-btn" class="side-source-btn active" type="button">
+                                        <img src="assets/images/zexon.png" alt="" class="side-source-icon">
+                                        <span class="side-source-meta">
+                                            <span class="side-source-label">Zexon Scripts</span>
+                                            <span class="side-source-subtitle">Built-in collection</span>
+                                        </span>
+                                        <span class="side-source-marker" aria-hidden="true"></span>
+                                    </button>
+                                    <button id="scripts-source-scriptblox-btn" class="side-source-btn" type="button">
+                                        <img src="assets/images/scriptblox.png" alt="" class="side-source-icon">
+                                        <span class="side-source-meta">
+                                            <span class="side-source-label">ScriptBlox</span>
+                                            <span class="side-source-subtitle">External source</span>
+                                        </span>
+                                        <span class="side-source-marker" aria-hidden="true"></span>
+                                    </button>
+                                </div>
+                                <div class="side-source-footnote">Pick a source to switch the Scripts page.</div>
+                            </div>
+                        </div>
+                        <div class="side-panel-slot" data-view="console">
+                            <div class="side-slot-panel side-console-panel">
+                                <div class="side-slot-title">Console Stats</div>
+                                <div class="console-side-status">
+                                    <span class="console-side-status-label">Logging</span>
+                                    <span id="console-side-logging-status" class="console-side-status-value">Off</span>
+                                </div>
+                                <div class="console-side-grid">
+                                    <div class="console-side-card">
+                                        <span class="console-side-card-label">Total Logs</span>
+                                        <span id="console-side-total-logs" class="console-side-card-value">0</span>
+                                    </div>
+                                    <div class="console-side-card">
+                                        <span class="console-side-card-label">Errors</span>
+                                        <span id="console-side-error-logs" class="console-side-card-value">0</span>
+                                    </div>
+                                    <div class="console-side-card">
+                                        <span class="console-side-card-label">Warnings</span>
+                                        <span id="console-side-warn-logs" class="console-side-card-value">0</span>
+                                    </div>
+                                </div>
+                                <div class="console-side-executor-row">
+                                    <span class="console-side-executor-label">Executor</span>
+                                    <span id="console-side-executor" class="console-side-executor-value">Hydrogen</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="side-panel-slot" data-view="settings">
+                            <div class="side-slot-panel side-about-panel">
+                                <div class="side-slot-title">Build Info</div>
+                                <div class="about-side-card">
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Build</span>
+                                        <span id="settings-side-build-version" class="about-side-value">-</span>
+                                    </div>
+                                    <div class="about-side-divider"></div>
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Latest</span>
+                                        <span id="settings-side-latest-version" class="about-side-value">Checking</span>
+                                    </div>
+                                    <div class="about-side-divider"></div>
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Data Size</span>
+                                        <span id="settings-side-data-size" class="about-side-value">0 b</span>
+                                    </div>
+                                    <div class="about-side-divider"></div>
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Executor</span>
+                                        <span id="settings-side-executor" class="about-side-value">Hydrogen</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="side-panel-slot" data-view="about">
+                            <div class="side-slot-panel side-about-panel">
+                                <div class="side-slot-title">About Build</div>
+                                <div class="about-side-card">
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Version</span>
+                                        <span id="about-side-build-version" class="about-side-value">-</span>
+                                    </div>
+                                    <div class="about-side-divider"></div>
+                                    <div class="about-side-row">
+                                        <span class="about-side-label">Latest</span>
+                                        <span id="about-side-latest-status" class="about-side-value">Checking</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </aside>
                 <div id="content-column">
@@ -114,19 +203,23 @@
                     <div id="editor-area"></div>
                 </div>
                 <div id="scripts-pane" class="content-pane hidden">
-                    <div class="scripts-header">
-                        <h1>Here are scripts we recommend!</h1>
-                        <div class="scripts-controls">
-                            <div class="script-filter-buttons">
-                                <button class="filter-btn active" data-filter="all">All</button>
-                                <button class="filter-btn" data-filter="free">Free</button>
-                                <button class="filter-btn" data-filter="paid">Paid</button>
+                    <div id="scripts-zexon-page" class="scripts-subpage">
+                        <div class="scripts-header">
+                            <h1>Here are scripts we recommend!</h1>
+                            <div class="scripts-controls">
+                                <div class="script-filter-buttons">
+                                    <button class="filter-btn active" data-filter="all">All</button>
+                                    <button class="filter-btn" data-filter="free">Free</button>
+                                    <button class="filter-btn" data-filter="paid">Paid</button>
+                                </div>
+                                <input type="text" id="script-hub-search" placeholder="Search scripts...">
                             </div>
-                            <input type="text" id="script-hub-search" placeholder="Search scripts...">
+                        </div>
+                        <div id="script-cards-container">
+                            <!-- Script cards will be loaded here -->
                         </div>
                     </div>
-                    <div id="script-cards-container">
-                        <!-- Script cards will be loaded here -->
+                    <div id="scripts-scriptblox-page" class="scripts-subpage hidden">
                     </div>
                 </div>
                 <div id="console-pane" class="content-pane hidden">
