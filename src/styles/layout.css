@@ -601,6 +601,7 @@
     align-items: center;
     gap: 7px;
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .workspace-icon {
@@ -613,9 +614,13 @@
 .workspace-name {
     color: var(--text-main);
     font-size: 12px;
+    display: block;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1 1 auto;
+    max-width: 100%;
 }
 
 .workspace-name-input {
@@ -636,6 +641,7 @@
     font-size: 16px;
     cursor: pointer;
     line-height: 1;
+    flex-shrink: 0;
 }
 
 .workspace-delete-btn:hover {
@@ -679,6 +685,13 @@
     min-width: 0;
 }
 
-#execute-btn {
+#bottom-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin-left: auto;
+}
+
+#execute-btn {
+    margin-left: 0;
 }

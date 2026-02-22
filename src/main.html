@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <title>Zyron Editor</title>
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com;">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
     <link rel="stylesheet" href="styles/base.css">
     <link rel="stylesheet" href="styles/layout.css">
     <link rel="stylesheet" href="styles/components.css">
@@ -220,6 +223,19 @@
                         </div>
                     </div>
                     <div id="scripts-scriptblox-page" class="scripts-subpage hidden">
+                        <div class="scripts-header">
+                            <h1 id="scriptblox-header-title">ScriptBlox Trending</h1>
+                            <div class="scripts-controls scriptblox-controls">
+                                <input type="text" id="scriptblox-search" placeholder="Search ScriptBlox...">
+                            </div>
+                        </div>
+                        <div id="scriptblox-status" class="scriptblox-status hidden"></div>
+                        <div id="scriptblox-cards-container"></div>
+                        <div class="scriptblox-pagination hidden">
+                            <button id="scriptblox-prev-btn" class="scriptblox-page-btn" type="button">&lt;</button>
+                            <span id="scriptblox-page-label" class="scriptblox-page-label">1</span>
+                            <button id="scriptblox-next-btn" class="scriptblox-page-btn" type="button">&gt;</button>
+                        </div>
                     </div>
                 </div>
                 <div id="console-pane" class="content-pane hidden">
@@ -254,6 +270,10 @@
                             <div class="settings-tab" data-tab="visuals">
                                 <img src="assets/images/stars.png" class="settings-tab-icon" alt="Visuals">
                                 <span>Visuals</span>
+                            </div>
+                            <div class="settings-tab" data-tab="editor">
+                                <img src="assets/images/editIcon.png" class="settings-tab-icon" alt="Editor">
+                                <span>Editor</span>
                             </div>
                             <div class="settings-tab" data-tab="account">
                                 <img src="assets/images/aboutIcon.png" class="settings-tab-icon" alt="Account & Data">
@@ -368,6 +388,60 @@
                                     </label>
                                 </div>
                             </div>
+
+                            <div id="editor-settings" class="settings-panel">
+                                <h2>Editor</h2>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Editor Size</h3>
+                                        <p class="setting-description">Change editor text size in real time</p>
+                                    </div>
+                                    <div class="nav-speed-control">
+                                        <input type="range" id="editor-size-slider" min="11" max="18" step="1" value="14">
+                                        <div id="editor-size-value" class="editor-size-value">14px</div>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Line Numbers</h3>
+                                        <p class="setting-description">Show line numbers on the left side of the editor</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="editor-line-numbers-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Active Line Highlight</h3>
+                                        <p class="setting-description">Highlight the line where your cursor is</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="editor-active-line-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Autocomplete</h3>
+                                        <p class="setting-description">Show Lua and Roblox suggestions while typing</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="editor-autocomplete-toggle" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-item">
+                                    <div class="setting-info">
+                                        <h3>Soft Wrap</h3>
+                                        <p class="setting-description">Wrap long lines instead of horizontal scrolling</p>
+                                    </div>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="editor-line-wrap-toggle">
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
                             
                             <div id="account-settings" class="settings-panel">
                                 <h2>Account & Data</h2>
@@ -418,11 +492,6 @@
             </div>
             <div id="bottom-bar">
                 <div id="connection-status">
-                    <div class="connection-item">
-                        <img src="assets/images/robloxIcon.png" class="connection-icon" alt="Roblox">
-                        <span id="roblox-status-text">Disconnected</span>
-                        <div id="roblox-status-indicator" class="status-indicator disconnected"></div>
-                    </div>
                     <div class="connection-item executor-selector" id="executor-selector">
                         <button id="executor-selector-btn" class="executor-selector-btn" type="button" aria-expanded="false">
                             <img id="executor-selected-icon" src="assets/images/Hydrogen.png" class="connection-icon" alt="Hydrogen">
@@ -445,7 +514,13 @@
                         <img src="assets/images/saveIcon.png" class="save-icon" alt="Saving">
                     </div>
                 </div>
-                <button id="execute-btn" disabled>Execute</button>
+                <div id="bottom-bar-actions">
+                    <button id="kill-switch-btn" class="kill-switch-btn" type="button" aria-pressed="false">
+                        <img src="assets/images/power.png" alt="" class="kill-switch-icon">
+                        <span>Kill Switch</span>
+                    </button>
+                    <button id="execute-btn" disabled>Execute</button>
+                </div>
             </div>
                 </div>
             </div>
@@ -499,11 +574,10 @@
 
     <div id="context-menu" class="hidden">
         <button class="context-menu-item" id="rename-tab-btn">Rename</button>
-        <button class="context-menu-item" id="cancel-context-btn">Cancel</button>
     </div>
 
     <div id="rename-modal-overlay" class="modal-overlay hidden">
-        <div class="modal-content">
+        <div class="modal-content rename-modal">
             <h2 id="rename-modal-title">Rename</h2>
             <input id="rename-modal-input" type="text" class="form-input">
             <div class="modal-actions">
@@ -572,10 +646,11 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/theme-twilight.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/mode-lua.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/lua/lua.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="javascripts/storage.js"></script>
     <script src="javascripts/state.js"></script>

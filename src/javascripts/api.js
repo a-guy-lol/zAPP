@@ -1,19 +1,38 @@
 async function checkConnection() {
-    const isRobloxConnected = await window.electronAPI.checkConnection();
-    executeBtn.disabled = !isRobloxConnected;
-    
-    if (isRobloxConnected) {
-        robloxStatusIndicator.classList.remove('disconnected');
-        robloxStatusIndicator.classList.add('connected');
-        robloxStatusText.textContent = 'Connected';
-    } else {
-        robloxStatusIndicator.classList.remove('connected');
-        robloxStatusIndicator.classList.add('disconnected');
-        robloxStatusText.textContent = 'Disconnected';
+    if (killSwitchEnabled) {
+        if (robloxStatusIndicator && robloxStatusText) {
+            robloxStatusIndicator.classList.remove('connected', 'disconnected');
+            robloxStatusIndicator.classList.add('disabled');
+            robloxStatusText.textContent = 'Disabled';
+        }
+
+        if (executorStatusIndicator) {
+            executorStatusIndicator.classList.remove('connected', 'disconnected', 'pending');
+            executorStatusIndicator.classList.add('disabled');
+        }
+
+        executeBtn.disabled = true;
+        return false;
     }
 
-    executorStatusIndicator.classList.remove('connected', 'disconnected');
+    const isRobloxConnected = await window.electronAPI.checkConnection();
+    
+    if (robloxStatusIndicator && robloxStatusText) {
+        if (isRobloxConnected) {
+            robloxStatusIndicator.classList.remove('disconnected', 'disabled');
+            robloxStatusIndicator.classList.add('connected');
+            robloxStatusText.textContent = 'Connected';
+        } else {
+            robloxStatusIndicator.classList.remove('connected', 'disabled');
+            robloxStatusIndicator.classList.add('disconnected');
+            robloxStatusText.textContent = 'Disconnected';
+        }
+    }
+
+    executorStatusIndicator.classList.remove('connected', 'disconnected', 'disabled', 'pending');
     executorStatusIndicator.classList.add(isRobloxConnected ? 'connected' : 'disconnected');
+
+    executeBtn.disabled = !isRobloxConnected;
 }
 
 async function loadChangelog() {

@@ -142,7 +142,8 @@
     gap: 0.5rem;
 }
 
-#nav-speed-slider {
+#nav-speed-slider,
+#editor-size-slider {
     width: 100%;
     accent-color: #ffffff;
     cursor: pointer;
@@ -160,6 +161,16 @@
     color: var(--text-muted);
 }
 
+.editor-size-value {
+    align-self: flex-end;
+    min-width: 2ch;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+    line-height: 1;
+    letter-spacing: 0.02em;
+}
+
 .key-input-container {
     display: flex;
     align-items: center;
@@ -169,6 +180,23 @@
 .key-input-container .form-input {
     width: 100%;
     max-width: 250px;
+}
+
+#rename-user-btn {
+    margin-top: 0;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-main);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+#rename-user-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: none;
 }
 
 .script-settings-content {

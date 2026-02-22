@@ -118,7 +118,8 @@ function stopConsolePolling() {
 
 function updateConsoleAccessUI() {
     const loggingEnabled = rbxConsoleLoggingToggle.checked;
-    const canUseConsole = consoleAccepted && loggingEnabled;
+    const killSwitchBlocked = Boolean(killSwitchEnabled);
+    const canUseConsole = consoleAccepted && loggingEnabled && !killSwitchBlocked;
 
     consoleConsentBanner.classList.toggle('hidden', consoleAccepted);
     consoleDisabledBanner.classList.toggle('hidden', !consoleAccepted || loggingEnabled);
@@ -140,14 +141,23 @@ function updateConsoleAccessUI() {
         return;
     }
 
+    if (killSwitchBlocked) {
+        stopConsolePolling();
+        renderConsolePlaceholder('Kill Switch is enabled. Console bridge is disabled.');
+        emitConsoleMetricsUpdate();
+        return;
+    }
+
     clearConsolePlaceholder();
     startConsolePolling();
     emitConsoleMetricsUpdate();
 }
 
 async function syncConsoleBridgeState({ notifyOnError = false, forceDisable = false } = {}) {
-    const enabled = forceDisable ? false : rbxConsoleLoggingToggle.checked;
-    const accepted = forceDisable ? false : consoleAccepted;
+    const killSwitchBlocked = Boolean(killSwitchEnabled);
+    const shouldDisable = forceDisable || killSwitchBlocked;
+    const enabled = shouldDisable ? false : rbxConsoleLoggingToggle.checked;
+    const accepted = shouldDisable ? false : consoleAccepted;
 
     try {
         const result = await window.electronAPI.consoleSetConfig({
@@ -256,8 +266,9 @@ window.syncConsoleBridgeState = syncConsoleBridgeState;
 window.onExecutorSelectionChanged = onExecutorSelectionChanged;
 window.onConsoleViewShown = onConsoleViewShown;
 window.getConsoleMetrics = function getConsoleMetrics() {
+    const killSwitchBlocked = Boolean(killSwitchEnabled);
     return {
-        active: Boolean(consoleAccepted && rbxConsoleLoggingToggle.checked),
+        active: Boolean(consoleAccepted && rbxConsoleLoggingToggle.checked && !killSwitchBlocked),
         totalLogs: totalConsoleLogs,
         errorLogs: errorConsoleLogs,
         warnLogs: warnConsoleLogs

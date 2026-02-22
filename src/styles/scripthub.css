@@ -32,7 +32,8 @@
     justify-self: start;
 }
 
-#script-hub-search {
+#script-hub-search,
+#scriptblox-search {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border-color);
     color: var(--text-main);
@@ -65,7 +66,8 @@
         flex-wrap: wrap;
     }
     
-    #script-hub-search {
+    #script-hub-search,
+    #scriptblox-search {
         width: 100%;
         max-width: none;
     }
@@ -78,18 +80,37 @@
         gap: 1rem;
     }
     
-    #script-hub-search {
+    #script-hub-search,
+    #scriptblox-search {
         width: 100%;
         max-width: none;
     }
 }
 
-#script-hub-search:focus {
+#script-hub-search:focus,
+#scriptblox-search:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.3);
 }
 
-#script-cards-container {
+.scriptblox-controls {
+    width: auto;
+    min-width: 0;
+    justify-self: end;
+    justify-content: flex-end;
+    display: flex;
+    align-items: center;
+    grid-template-columns: none;
+}
+
+#scriptblox-search {
+    width: clamp(200px, 24vw, 260px);
+    min-width: 200px;
+    max-width: 260px;
+}
+
+#script-cards-container,
+#scriptblox-cards-container {
     padding: 1.15rem;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -103,7 +124,8 @@
 }
 
 @media (max-width: 768px) {
-    #script-cards-container {
+    #script-cards-container,
+    #scriptblox-cards-container {
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         padding: 1rem;
         gap: 1rem;
@@ -111,7 +133,8 @@
 }
 
 @media (max-width: 480px) {
-    #script-cards-container {
+    #script-cards-container,
+    #scriptblox-cards-container {
         grid-template-columns: 1fr;
         padding: 0.85rem;
     }
@@ -122,21 +145,23 @@
     border: 1px solid var(--border-color);
     border-radius: 10px;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
     display: flex;
     flex-direction: column;
     min-height: 310px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
 }
 
 .script-card:hover {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.3);
 }
 
 .script-thumbnail {
     width: 100%;
-    height: 140px;
+    height: 142px;
     object-fit: cover;
     background: rgba(0, 0, 0, 0.3);
     display: flex;
@@ -144,6 +169,7 @@
     justify-content: center;
     color: var(--text-muted);
     font-size: 0.9rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 
 .script-thumbnail img {
@@ -191,15 +217,16 @@
 .script-execute-btn {
     background: rgba(255, 255, 255, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #000;
+    color: #111827;
     padding: 8px 16px;
-    border-radius: 6px;
+    border-radius: 7px;
     font-size: clamp(0.8rem, 0.95vw, 0.9rem);
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     width: 100%;
     margin-top: 2px;
+    box-shadow: none;
 }
 
 .script-execute-btn:hover {
@@ -217,6 +244,23 @@
     width: 100%;
 }
 
+.scripts-controls.scriptblox-controls {
+    width: fit-content;
+    max-width: 100%;
+    grid-template-columns: none;
+    justify-self: end;
+    justify-content: flex-end;
+    margin-left: auto;
+}
+
+@media (min-width: 981px) {
+    #scripts-scriptblox-page .scripts-header .scripts-controls.scriptblox-controls {
+        justify-self: end;
+        margin-left: auto;
+        width: max-content;
+    }
+}
+
 .script-filter-buttons {
     display: flex;
     gap: 0.45rem;
@@ -231,6 +275,18 @@
     .scripts-controls {
         grid-template-columns: 1fr;
         justify-self: stretch;
+    }
+
+    .scriptblox-controls {
+        width: 100%;
+        justify-self: stretch;
+        justify-content: flex-start;
+    }
+
+    #scriptblox-search {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
     }
 }
 
@@ -292,6 +348,121 @@
     background: rgba(0, 0, 0, 0.8);
 }
 
+.scriptblox-status {
+    margin: 0.75rem 1.15rem 0;
+    padding: 0.65rem 0.85rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-muted);
+    font-size: 0.84rem;
+}
+
+.scriptblox-status.error {
+    border-color: rgba(238, 92, 92, 0.4);
+    background: rgba(238, 92, 92, 0.12);
+    color: #f3c6c6;
+}
+
+.scriptblox-empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: var(--text-muted);
+    margin: 0;
+    padding: 2rem 1rem;
+}
+
+.scriptblox-card-info {
+    grid-template-rows: auto auto auto;
+}
+
+.scriptblox-game-label {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.scriptblox-card-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.55rem;
+    margin-top: 0.2rem;
+}
+
+.script-copy-btn {
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    padding: 8px 12px;
+    border-radius: 7px;
+    font-size: clamp(0.78rem, 0.95vw, 0.88rem);
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    width: 100%;
+}
+
+.script-copy-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.34);
+    transform: translateY(-1px);
+}
+
+.script-copy-btn:disabled,
+.script-execute-btn:disabled,
+.scriptblox-page-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+}
+
+body.kill-switch-on .script-execute-btn {
+    opacity: 0.52;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.scriptblox-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    padding: 0.5rem 0.9rem 0.9rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.scriptblox-page-btn {
+    min-width: 34px;
+    height: 30px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-main);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    line-height: 1;
+    transition: all 0.2s ease;
+}
+
+.scriptblox-page-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.scriptblox-page-label {
+    min-width: 30px;
+    text-align: center;
+    color: var(--text-main);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
 .script-type-badge {
     position: absolute;
     top: 8px;
@@ -305,31 +476,31 @@
 }
 
 .script-type-badge.free {
-    background: rgba(46, 204, 113, 0.2);
-    color: #2ecc71;
-    border: 1px solid rgba(46, 204, 113, 0.3);
+    background: rgba(85, 196, 138, 0.14);
+    color: #8cd7b0;
+    border: 1px solid rgba(85, 196, 138, 0.28);
 }
 
 .script-type-badge.key-system {
-    background: rgba(52, 152, 219, 0.2);
-    color: #3498db;
-    border: 1px solid rgba(52, 152, 219, 0.3);
+    background: rgba(109, 168, 214, 0.14);
+    color: #9dc7e6;
+    border: 1px solid rgba(109, 168, 214, 0.28);
 }
 
 .script-type-badge.paid {
-    background: rgba(241, 196, 15, 0.2);
-    color: #f1c40f;
-    border: 1px solid rgba(241, 196, 15, 0.3);
+    background: rgba(220, 188, 110, 0.14);
+    color: #e2c889;
+    border: 1px solid rgba(220, 188, 110, 0.28);
 }
 
 .script-type-badge.paid-key-system {
-    background: rgba(155, 89, 182, 0.2);
-    color: #9b59b6;
-    border: 1px solid rgba(155, 89, 182, 0.3);
+    background: rgba(157, 132, 202, 0.14);
+    color: #c6b2e8;
+    border: 1px solid rgba(157, 132, 202, 0.28);
 }
 
 .script-type-badge.paid-free {
-    background: rgba(52, 152, 219, 0.2);
-    color: #3498db;
-    border: 1px solid rgba(52, 152, 219, 0.3);
+    background: rgba(110, 166, 211, 0.14);
+    color: #a3c8e4;
+    border: 1px solid rgba(110, 166, 211, 0.28);
 }

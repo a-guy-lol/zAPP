@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, clipboard } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
@@ -42,6 +42,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   getScripts: () => ipcRenderer.invoke('get-scripts'),
   executeHubScript: (scriptPath, savedKey) => ipcRenderer.invoke('execute-hub-script', scriptPath, savedKey),
+  scriptbloxTrending: () => ipcRenderer.invoke('scriptblox-trending'),
+  scriptbloxSearch: (options) => ipcRenderer.invoke('scriptblox-search', options),
+  scriptbloxGetScriptContent: (scriptIdentifier) => ipcRenderer.invoke('scriptblox-get-script-content', scriptIdentifier),
+  clipboardWriteText: (text) => {
+    try {
+      if (!clipboard || typeof clipboard.writeText !== 'function') {
+        return { success: false, error: 'Clipboard is unavailable.' };
+      }
+      clipboard.writeText(String(text ?? ''));
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  },
   setSelectedExecutor: (executor) => ipcRenderer.invoke('set-selected-executor', executor),
   getSelectedExecutor: () => ipcRenderer.invoke('get-selected-executor'),
   consoleSetConfig: (config) => ipcRenderer.invoke('console-set-config', config),

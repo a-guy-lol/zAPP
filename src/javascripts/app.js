@@ -54,6 +54,7 @@ let appBuildVersion = null;
 let latestChangelogVersion = null;
 let isDevelopmentBuild = false;
 let appDataFileSizeBytes = 0;
+let killSwitchTransitionInFlight = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initApp, 100);
@@ -98,6 +99,10 @@ async function initApp() {
     navSpeedSlider.value = String(Math.min(3, Math.max(1, navSpeedValue)));
     applyNavSpeed(navSpeedSlider.value);
 
+    if (typeof window.applyEditorSettingsFromStorage === 'function') {
+        window.applyEditorSettingsFromStorage();
+    }
+
     const effectsEnabled = window.safeStorage.getItem('zyronEffects') !== 'false';
     effectsToggle.checked = effectsEnabled;
     if (!effectsEnabled) document.body.classList.add('no-effects');
@@ -139,6 +144,8 @@ async function initApp() {
     } catch (error) {
         console.error('Failed to read selected executor from backend:', error);
     }
+    killSwitchEnabled = window.safeStorage.getItem('zyronKillSwitch') === 'true';
+    updateKillSwitchUI();
     await setSelectedExecutor(initialExecutor, { persist: false, notify: false });
 
     renderOnboardingAvatarChoices();
@@ -165,6 +172,12 @@ async function initApp() {
     newTabBtn.addEventListener('click', createNewTab);
     autoexecuteManagerBtn.addEventListener('click', openAutoexecuteModal);
     executeBtn.addEventListener('click', executeScript);
+    if (killSwitchBtn) {
+        killSwitchBtn.addEventListener('click', async () => {
+            if (killSwitchTransitionInFlight) return;
+            await setKillSwitchState(!killSwitchEnabled, { persist: true, notify: true });
+        });
+    }
     renameUserBtn.addEventListener('click', handleRenameUser);
     clearDataBtn.addEventListener('click', () => {
         showConfirmationModal(
@@ -182,8 +195,12 @@ async function initApp() {
 
     contextMenu.addEventListener('click', handleContextMenuClick);
     document.addEventListener('click', (e) => {
-        if (!contextMenu.contains(e.target)) {
+        const contextMenuOpen = !contextMenu.classList.contains('hidden');
+        if (contextMenuOpen && !contextMenu.contains(e.target)) {
             contextMenu.classList.add('hidden');
+            if (typeof window.clearRenameContext === 'function') {
+                window.clearRenameContext();
+            }
         }
         if (!sideNotificationsPopup.classList.contains('hidden')) {
             const clickedInsidePopup = sideNotificationsPopup.contains(e.target);
@@ -193,12 +210,32 @@ async function initApp() {
             }
         }
     });
+    document.addEventListener('dragstart', (event) => {
+        if (!(event.target instanceof HTMLImageElement)) return;
 
-    renameModalCancelBtn.addEventListener('click', () => renameModalOverlay.classList.add('hidden'));
+        // Keep drag-and-drop features working for draggable parent rows.
+        if (event.target.closest('[draggable="true"]')) {
+            return;
+        }
+
+        event.preventDefault();
+    });
+
+    renameModalCancelBtn.addEventListener('click', () => {
+        renameModalOverlay.classList.add('hidden');
+        if (typeof window.clearRenameContext === 'function') {
+            window.clearRenameContext();
+        }
+    });
     renameModalSaveBtn.addEventListener('click', saveTabRename);
     renameModalInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') saveTabRename();
-        if (e.key === 'Escape') renameModalOverlay.classList.add('hidden');
+        if (e.key === 'Escape') {
+            renameModalOverlay.classList.add('hidden');
+            if (typeof window.clearRenameContext === 'function') {
+                window.clearRenameContext();
+            }
+        }
     });
 
     autoSaveToggle.addEventListener('change', setupAutoSave);
@@ -206,6 +243,22 @@ async function initApp() {
     navMotionToggle.addEventListener('change', toggleNavMotion);
     navSpeedSlider.addEventListener('input', updateNavSpeed);
     navSpeedSlider.addEventListener('change', updateNavSpeed);
+    if (editorSizeSlider) {
+        editorSizeSlider.addEventListener('input', updateEditorSizeSetting);
+        editorSizeSlider.addEventListener('change', updateEditorSizeSetting);
+    }
+    if (editorLineNumbersToggle) {
+        editorLineNumbersToggle.addEventListener('change', toggleEditorLineNumbers);
+    }
+    if (editorActiveLineToggle) {
+        editorActiveLineToggle.addEventListener('change', toggleEditorActiveLine);
+    }
+    if (editorAutocompleteToggle) {
+        editorAutocompleteToggle.addEventListener('change', toggleEditorAutocomplete);
+    }
+    if (editorLineWrapToggle) {
+        editorLineWrapToggle.addEventListener('change', toggleEditorLineWrap);
+    }
     effectsToggle.addEventListener('change', toggleEffects);
     saveIndicatorToggle.addEventListener('change', toggleSaveIndicator);
     notificationsToggle.addEventListener('change', toggleNotifications);
@@ -238,7 +291,6 @@ async function initApp() {
     setupExecutorSelector();
     initializeWorkspacePanel();
     setupSidePanel();
-    setupStatusPopups();
 
     document.querySelectorAll('.script-filter-buttons .filter-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -504,6 +556,7 @@ async function showMainApp(username) {
     await syncAutoExecuteScripts({ notifyOnError: false });
     await loadChangelog();
     loadScriptCards();
+    updateKillSwitchUI();
     checkConnection();
     if (connectionCheckInterval) clearInterval(connectionCheckInterval);
     connectionCheckInterval = setInterval(checkConnection, 3000);
@@ -582,11 +635,14 @@ async function setSelectedExecutor(executor, { persist = true, notify = false } 
     updateSettingsSidePanelInfo();
 
     if (typeof window.syncConsoleBridgeState === 'function') {
-        await window.syncConsoleBridgeState({ notifyOnError: notify });
+        await window.syncConsoleBridgeState({
+            notifyOnError: notify,
+            forceDisable: killSwitchEnabled
+        });
     }
     await syncAutoExecuteScripts({ notifyOnError: notify });
 
-    checkConnection();
+    await checkConnection();
 }
 
 function setupExecutorSelector() {
@@ -879,13 +935,80 @@ function getAutoExecuteEntry(tabId) {
 function collectAutoExecutePayloadScripts() {
     return TABS_DATA.map((tab) => {
         const entry = getAutoExecuteEntry(tab.id);
+        const enabled = killSwitchEnabled ? false : Boolean(entry.enabled);
         return {
             id: tab.id,
             serial: entry.serial,
-            enabled: Boolean(entry.enabled),
+            enabled,
             content: tab.content || ''
         };
     });
+}
+
+function updateKillSwitchUI() {
+    if (killSwitchBtn) {
+        killSwitchBtn.classList.toggle('active', killSwitchEnabled);
+        killSwitchBtn.setAttribute('aria-pressed', killSwitchEnabled ? 'true' : 'false');
+        killSwitchBtn.title = killSwitchEnabled ? 'Kill Switch On' : 'Kill Switch Off';
+    }
+
+    document.body.classList.toggle('kill-switch-on', killSwitchEnabled);
+    document.querySelectorAll('.script-execute-btn').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        button.disabled = killSwitchEnabled;
+        if (killSwitchEnabled) {
+            button.title = 'Kill Switch is enabled';
+        } else if (button.title === 'Kill Switch is enabled') {
+            button.removeAttribute('title');
+        }
+    });
+}
+
+async function setKillSwitchState(nextValue, { persist = true, notify = true } = {}) {
+    const enabled = Boolean(nextValue);
+    if (enabled === killSwitchEnabled && !killSwitchTransitionInFlight) {
+        updateKillSwitchUI();
+        await checkConnection();
+        return;
+    }
+    if (killSwitchTransitionInFlight) {
+        return;
+    }
+
+    killSwitchTransitionInFlight = true;
+    if (killSwitchBtn) {
+        killSwitchBtn.disabled = true;
+    }
+    killSwitchEnabled = enabled;
+    updateKillSwitchUI();
+
+    try {
+        if (persist && window.safeStorage) {
+            window.safeStorage.setItem('zyronKillSwitch', enabled);
+        }
+
+        // Temporarily strip/rebuild all app-managed autoexecute files.
+        await syncAutoExecuteScripts({ notifyOnError: notify });
+
+        if (typeof window.syncConsoleBridgeState === 'function') {
+            await window.syncConsoleBridgeState({ notifyOnError: notify, forceDisable: enabled });
+        }
+
+        await checkConnection();
+
+        if (notify) {
+            showNotification(
+                enabled ? 'Kill Switch enabled.' : 'Kill Switch disabled.',
+                enabled ? 'error' : 'info'
+            );
+        }
+    } finally {
+        killSwitchTransitionInFlight = false;
+        if (killSwitchBtn) {
+            killSwitchBtn.disabled = false;
+        }
+        updateKillSwitchUI();
+    }
 }
 
 async function syncAutoExecuteScripts({ notifyOnError = true } = {}) {
@@ -902,7 +1025,10 @@ async function syncAutoExecuteScripts({ notifyOnError = true } = {}) {
         const editorResult = await window.electronAPI.syncAutoexecuteScripts(payload);
         const supportsScriptHubSync = typeof window.electronAPI.syncScriptHubAutoexecute === 'function';
         const scriptHubResult = supportsScriptHubSync
-            ? await window.electronAPI.syncScriptHubAutoexecute({ executor: selectedExecutor })
+            ? await window.electronAPI.syncScriptHubAutoexecute({
+                executor: selectedExecutor,
+                forceDisable: killSwitchEnabled
+            })
             : { success: true };
 
         const failed = !editorResult.success ? editorResult : (!scriptHubResult.success ? scriptHubResult : null);
@@ -1093,3 +1219,6 @@ window.clearUnreadNotifications = function clearUnreadNotifications() {
 
 window.syncAutoExecuteScripts = syncAutoExecuteScripts;
 window.updateSideProfile = updateSideProfile;
+window.setKillSwitchState = setKillSwitchState;
+window.isKillSwitchEnabled = () => killSwitchEnabled;
+window.updateKillSwitchUI = updateKillSwitchUI;

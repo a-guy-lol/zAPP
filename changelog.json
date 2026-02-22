@@ -5,10 +5,15 @@
   "version": "1.5.0",
   "date": "2026-02-22",
   "changes": [
-    "Release artifacts now build as separate x64 and arm64 ZIP files (no universal primary target)",
-    "Installer now prefers architecture-matching assets (arm64 on Apple Silicon, x64 on Intel)",
-    "App updater now selects architecture-specific update ZIPs first, with universal only as fallback",
-    "Release script now enforces architecture-specific ZIP targets for tagged releases"
+    "Brand new text editor: changed from Ace to CodeMirror because ace was outdated and limited",
+    "New autocomplete functions like Loadstring() and much more",
+    "Added ScriptBlox scripts: You can see trending and search for scripts",
+    "Added a kill switch: It disables all scripts from executing, no auto execution, etc..",
+    "Changed Rename popup and you can now right-click to rename folders!",
+    "Changed the data structure for less issues in the future",
+    "Redesigned script and folder tabs to show more and max character limit of 20",
+    "Fixed icon/image dragging so you dont drag images when navigating through the app"
+
   ]
 },
 

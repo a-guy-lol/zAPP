@@ -59,6 +59,98 @@ function updateNavSpeed() {
     applyNavSpeed(speedValue);
 }
 
+function getFallbackEditorPreferences() {
+    const readBoolean = (key, fallback) => {
+        const raw = window.safeStorage.getItem(key);
+        if (raw === null || typeof raw === 'undefined') return fallback;
+        return String(raw) !== 'false';
+    };
+
+    const fallbackSize = Number(window.safeStorage.getItem('zyronEditorFontSize'));
+    return {
+        fontSize: Number.isFinite(fallbackSize) ? fallbackSize : 14,
+        lineNumbers: readBoolean('zyronEditorLineNumbers', true),
+        highlightActiveLine: readBoolean('zyronEditorActiveLine', true),
+        lineWrap: readBoolean('zyronEditorLineWrap', false),
+        autocomplete: readBoolean('zyronEditorAutocomplete', true)
+    };
+}
+
+function getEditorPreferencesForUI() {
+    if (typeof window.getEditorPreferences === 'function') {
+        return window.getEditorPreferences();
+    }
+    return getFallbackEditorPreferences();
+}
+
+function setEditorPreferencesFromUI(partialPreferences) {
+    const nextPreferences = {
+        ...getEditorPreferencesForUI(),
+        ...partialPreferences
+    };
+
+    if (typeof window.setEditorPreferences === 'function') {
+        return window.setEditorPreferences(nextPreferences);
+    }
+
+    window.safeStorage.setItem('zyronEditorFontSize', nextPreferences.fontSize);
+    window.safeStorage.setItem('zyronEditorLineNumbers', nextPreferences.lineNumbers);
+    window.safeStorage.setItem('zyronEditorActiveLine', nextPreferences.highlightActiveLine);
+    window.safeStorage.setItem('zyronEditorLineWrap', nextPreferences.lineWrap);
+    window.safeStorage.setItem('zyronEditorAutocomplete', nextPreferences.autocomplete);
+    return nextPreferences;
+}
+
+function updateEditorSizeValue(sizeValue) {
+    if (!editorSizeValue) return;
+    const numeric = Number(sizeValue);
+    editorSizeValue.textContent = Number.isFinite(numeric) ? `${Math.round(numeric)}px` : '14px';
+}
+
+function updateEditorSizeSetting() {
+    const min = Number(window.EDITOR_FONT_SIZE_MIN) || 11;
+    const max = Number(window.EDITOR_FONT_SIZE_MAX) || 18;
+    const rawValue = Number(editorSizeSlider.value);
+    const clamped = Math.max(min, Math.min(max, Number.isFinite(rawValue) ? rawValue : 14));
+    editorSizeSlider.value = String(clamped);
+    setEditorPreferencesFromUI({ fontSize: clamped });
+    updateEditorSizeValue(clamped);
+}
+
+function toggleEditorLineNumbers() {
+    setEditorPreferencesFromUI({ lineNumbers: editorLineNumbersToggle.checked });
+}
+
+function toggleEditorActiveLine() {
+    setEditorPreferencesFromUI({ highlightActiveLine: editorActiveLineToggle.checked });
+}
+
+function toggleEditorAutocomplete() {
+    setEditorPreferencesFromUI({ autocomplete: editorAutocompleteToggle.checked });
+}
+
+function toggleEditorLineWrap() {
+    setEditorPreferencesFromUI({ lineWrap: editorLineWrapToggle.checked });
+}
+
+function applyEditorSettingsFromStorage() {
+    let preferences;
+    if (typeof window.loadEditorPreferencesFromStorage === 'function') {
+        preferences = window.loadEditorPreferencesFromStorage();
+    } else {
+        preferences = getFallbackEditorPreferences();
+    }
+
+    editorSizeSlider.value = String(preferences.fontSize);
+    editorLineNumbersToggle.checked = preferences.lineNumbers;
+    editorActiveLineToggle.checked = preferences.highlightActiveLine;
+    editorAutocompleteToggle.checked = preferences.autocomplete;
+    editorLineWrapToggle.checked = preferences.lineWrap;
+    updateEditorSizeValue(preferences.fontSize);
+}
+
+window.applyEditorSettingsFromStorage = applyEditorSettingsFromStorage;
+
 function toggleEffects() {
     const enabled = document.getElementById('effects-toggle').checked;
     window.safeStorage.setItem('zyronEffects', enabled);
@@ -105,10 +197,15 @@ async function toggleRobloxConsoleLogging() {
 }
 
 function handleRenameUser() {
+    if (typeof window.clearRenameContext === 'function') {
+        window.clearRenameContext();
+    }
     document.getElementById('rename-modal-title').textContent = 'Change Name';
     renameModalInput.value = (sideProfileName && sideProfileName.textContent.trim()) || window.safeStorage.getItem('zyronUsername') || '';
+    renameModalInput.maxLength = 32;
     renameModalOverlay.classList.remove('hidden');
     renameModalInput.focus();
+    renameModalInput.select();
 }
 
 async function confirmClearData() {
@@ -149,6 +246,12 @@ async function confirmClearData() {
             window.safeStorage.removeItem('zyronActiveWorkspaceId');
             window.safeStorage.removeItem('zyronAutoExecuteFolderCollapse');
             window.safeStorage.removeItem('zyronDiscordRpc');
+            window.safeStorage.removeItem('zyronEditorFontSize');
+            window.safeStorage.removeItem('zyronEditorLineNumbers');
+            window.safeStorage.removeItem('zyronEditorActiveLine');
+            window.safeStorage.removeItem('zyronEditorLineWrap');
+            window.safeStorage.removeItem('zyronEditorAutocomplete');
+            window.safeStorage.removeItem('zyronKillSwitch');
             if (typeof window.safeStorageFlush === 'function') {
                 await window.safeStorageFlush();
             }

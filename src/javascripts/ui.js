@@ -50,7 +50,9 @@ function filterTabs() {
     const query = scriptSearchBox.value.toLowerCase();
     const tabs = scriptTabBar.querySelectorAll('.script-tab');
     tabs.forEach(tab => {
-        const tabName = tab.querySelector('.tab-name').textContent.toLowerCase();
+        const visibleName = tab.querySelector('.tab-name')?.textContent || '';
+        const fullName = tab.dataset.fullName || tab.querySelector('.tab-name')?.title || visibleName;
+        const tabName = fullName.toLowerCase();
         if (tabName.includes(query)) {
             tab.style.display = '';
         } else {

@@ -2,6 +2,17 @@ function getWorkspaceById(workspaceId) {
     return WORKSPACES_DATA.find((workspace) => workspace.id === workspaceId) || null;
 }
 
+const SCRIPT_TAB_NAME_MAX_CHARS = 20;
+
+function getTabDisplayName(name) {
+    const cleanName = typeof name === 'string' ? name.trim() : '';
+    if (!cleanName) return 'Script';
+    if (cleanName.length <= SCRIPT_TAB_NAME_MAX_CHARS) {
+        return cleanName;
+    }
+    return `${cleanName.slice(0, SCRIPT_TAB_NAME_MAX_CHARS)}...`;
+}
+
 function getActiveWorkspace() {
     let workspace = getWorkspaceById(activeWorkspaceId);
     if (!workspace && WORKSPACES_DATA.length > 0) {
@@ -98,6 +109,9 @@ function beginInlineWorkspaceRename(workspaceId) {
         }
         workspace.name = newName;
         renderWorkspaceList();
+        if (!autoexecuteModalOverlay.classList.contains('hidden')) {
+            renderAutoexecuteDirectory();
+        }
         saveState();
     };
 
@@ -129,13 +143,29 @@ function renderWorkspaceList() {
         item.dataset.workspaceId = workspace.id;
         item.draggable = true;
 
-        item.innerHTML = `
-            <div class="workspace-item-main">
-                <img src="assets/images/folder.png" alt="" class="workspace-icon">
-                <span class="workspace-name" title="${workspace.name}">${workspace.name}</span>
-            </div>
-            <button class="workspace-delete-btn" type="button" title="Delete folder">×</button>
-        `;
+        const itemMain = document.createElement('div');
+        itemMain.className = 'workspace-item-main';
+
+        const icon = document.createElement('img');
+        icon.src = 'assets/images/folder.png';
+        icon.alt = '';
+        icon.className = 'workspace-icon';
+
+        const name = document.createElement('span');
+        name.className = 'workspace-name';
+        name.title = workspace.name;
+        name.textContent = workspace.name;
+
+        itemMain.appendChild(icon);
+        itemMain.appendChild(name);
+        item.appendChild(itemMain);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'workspace-delete-btn';
+        deleteButton.type = 'button';
+        deleteButton.title = 'Delete folder';
+        deleteButton.textContent = '×';
+        item.appendChild(deleteButton);
 
         let clickTimer = null;
         item.addEventListener('click', () => {
@@ -154,7 +184,14 @@ function renderWorkspaceList() {
             beginInlineWorkspaceRename(workspace.id);
         });
 
-        item.querySelector('.workspace-delete-btn').addEventListener('click', (event) => {
+        item.addEventListener('contextmenu', (event) => {
+            if (event.target.closest('.workspace-delete-btn')) return;
+            event.preventDefault();
+            event.stopPropagation();
+            showContextMenu(event, { type: 'workspace', id: workspace.id });
+        });
+
+        deleteButton.addEventListener('click', (event) => {
             event.stopPropagation();
             deleteWorkspace(workspace.id);
         });
@@ -290,7 +327,7 @@ function beginInlineTabRename(tabId) {
     renameInput.type = 'text';
     renameInput.className = 'tab-name-input';
     renameInput.value = tab.name;
-    renameInput.maxLength = 48;
+    renameInput.maxLength = SCRIPT_TAB_NAME_MAX_CHARS;
 
     const commitRename = () => {
         const newName = renameInput.value.trim();
@@ -299,8 +336,14 @@ function beginInlineTabRename(tabId) {
             return;
         }
         tab.name = newName;
-        saveState();
         renderAllTabs();
+        if (activeTabId === tab.id) {
+            switchTab(tab.id);
+        }
+        if (!autoexecuteModalOverlay.classList.contains('hidden')) {
+            renderAutoexecuteDirectory();
+        }
+        saveState();
     };
 
     const cancelRename = () => renderAllTabs();
@@ -326,20 +369,34 @@ function createTabElement(id, name) {
     tabElement.id = id;
     tabElement.className = 'script-tab';
     tabElement.draggable = true;
-    tabElement.innerHTML = `<span class="tab-name" title="${name}">${name}</span><button class="close-btn">&times;</button>`;
+
+    const tabName = document.createElement('span');
+    tabName.className = 'tab-name';
+    tabName.title = name;
+    tabName.textContent = getTabDisplayName(name);
+
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-btn';
+    closeButton.type = 'button';
+    closeButton.innerHTML = '&times;';
+    closeButton.title = 'Close script';
+
+    tabElement.dataset.fullName = name;
+    tabElement.appendChild(tabName);
+    tabElement.appendChild(closeButton);
     scriptTabBar.appendChild(tabElement);
 
     tabElement.addEventListener('click', (event) => {
-        if (event.target.classList.contains('close-btn')) return;
+        if (event.target.closest('.close-btn')) return;
         switchTab(id);
     });
 
     tabElement.addEventListener('dblclick', (event) => {
-        if (event.target.classList.contains('close-btn')) return;
+        if (event.target.closest('.close-btn')) return;
         beginInlineTabRename(id);
     });
 
-    tabElement.querySelector('.close-btn').addEventListener('click', (event) => {
+    closeButton.addEventListener('click', (event) => {
         event.stopPropagation();
         closeTab(id);
     });
@@ -347,7 +404,7 @@ function createTabElement(id, name) {
     tabElement.addEventListener('contextmenu', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showContextMenu(event, id);
+        showContextMenu(event, { type: 'tab', id });
     });
 
     tabElement.addEventListener('dragstart', (event) => {

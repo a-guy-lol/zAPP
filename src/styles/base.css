@@ -26,6 +26,11 @@ body {
     color: var(--text-main);
 }
 
+img {
+    -webkit-user-drag: none;
+    user-select: none;
+}
+
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);

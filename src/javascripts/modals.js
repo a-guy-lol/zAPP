@@ -1,38 +1,108 @@
-function showContextMenu(event, tabId) {
-    activeContextMenuTabId = tabId;
+function clearRenameContext() {
+    activeContextMenuTabId = null;
+    activeContextMenuWorkspaceId = null;
+    activeContextMenuType = null;
+}
+
+function resolveContextTarget(target) {
+    if (typeof target === 'string') {
+        return { type: 'tab', id: target };
+    }
+    if (!target || typeof target !== 'object') {
+        return null;
+    }
+    const targetType = target.type === 'workspace' ? 'workspace' : 'tab';
+    const targetId = typeof target.id === 'string' ? target.id.trim() : '';
+    if (!targetId) return null;
+    return { type: targetType, id: targetId };
+}
+
+function showContextMenu(event, target) {
+    const resolvedTarget = resolveContextTarget(target);
+    if (!resolvedTarget) return;
+
+    clearRenameContext();
+    activeContextMenuType = resolvedTarget.type;
+    if (resolvedTarget.type === 'workspace') {
+        activeContextMenuWorkspaceId = resolvedTarget.id;
+    } else {
+        activeContextMenuTabId = resolvedTarget.id;
+    }
+
+    const renameButton = document.getElementById('rename-tab-btn');
+    if (renameButton) {
+        renameButton.textContent = resolvedTarget.type === 'workspace' ? 'Rename Folder' : 'Rename Script';
+    }
+
     contextMenu.style.top = `${event.clientY}px`;
     contextMenu.style.left = `${event.clientX}px`;
     contextMenu.classList.remove('hidden');
 }
 
 function handleContextMenuClick(event) {
-    if (!activeContextMenuTabId) return;
+    if (!activeContextMenuType) return;
     const action = event.target.id;
+    let openedRenameModal = false;
     if (action === 'rename-tab-btn') {
-        const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
-        if(tab) {
-            document.getElementById('rename-modal-title').textContent = 'Rename Tab';
+        if (activeContextMenuType === 'workspace' && activeContextMenuWorkspaceId) {
+            const workspace = getWorkspaceById(activeContextMenuWorkspaceId);
+            if (workspace) {
+                document.getElementById('rename-modal-title').textContent = 'Rename Folder';
+                renameModalInput.value = workspace.name;
+                renameModalInput.maxLength = 36;
+                renameModalOverlay.classList.remove('hidden');
+                renameModalInput.focus();
+                renameModalInput.select();
+                openedRenameModal = true;
+            }
+        } else if (activeContextMenuType === 'tab' && activeContextMenuTabId) {
+            const tab = TABS_DATA.find((entry) => entry.id === activeContextMenuTabId);
+            if (!tab) {
+                contextMenu.classList.add('hidden');
+                clearRenameContext();
+                return;
+            }
+            document.getElementById('rename-modal-title').textContent = 'Rename Script';
             renameModalInput.value = tab.name;
+            renameModalInput.maxLength = 20;
             renameModalOverlay.classList.remove('hidden');
             renameModalInput.focus();
+            renameModalInput.select();
+            openedRenameModal = true;
         }
     }
     contextMenu.classList.add('hidden');
+    if (!openedRenameModal) {
+        clearRenameContext();
+    }
 }
 
 function saveTabRename() {
     const newName = renameModalInput.value.trim();
-    if (newName && activeContextMenuTabId) {
-        const tab = TABS_DATA.find(t => t.id === activeContextMenuTabId);
-        if (tab) {
-            tab.name = newName;
-            const tabNameNode = document.querySelector(`#${activeContextMenuTabId} .tab-name`);
-            if (tabNameNode) {
-                tabNameNode.textContent = tab.name;
+    if (newName && activeContextMenuType === 'workspace' && activeContextMenuWorkspaceId) {
+        const workspace = getWorkspaceById(activeContextMenuWorkspaceId);
+        if (workspace) {
+            workspace.name = newName;
+            renderWorkspaceList();
+            if (!autoexecuteModalOverlay.classList.contains('hidden')) {
+                renderAutoexecuteDirectory();
             }
             saveState();
         }
-    } else if (newName && !activeContextMenuTabId) {
+    } else if (newName && activeContextMenuType === 'tab' && activeContextMenuTabId) {
+        const tab = TABS_DATA.find((entry) => entry.id === activeContextMenuTabId);
+        if (tab) {
+            tab.name = newName.slice(0, 20);
+            renderAllTabs();
+            if (activeTabId === tab.id) {
+                switchTab(tab.id);
+            }
+            if (!autoexecuteModalOverlay.classList.contains('hidden')) {
+                renderAutoexecuteDirectory();
+            }
+            saveState();
+        }
+    } else if (newName && !activeContextMenuType) {
         // This is for renaming the user
         if (typeof window.persistUsername === 'function') {
             window.persistUsername(newName);
@@ -42,8 +112,10 @@ function saveTabRename() {
         showNotification('Name changed successfully!');
     }
     renameModalOverlay.classList.add('hidden');
-    activeContextMenuTabId = null; // Reset context
+    clearRenameContext();
 }
+
+window.clearRenameContext = clearRenameContext;
 
 function showConfirmationModal(title, text, onConfirm) {
     document.getElementById('confirm-modal-title').textContent = title;

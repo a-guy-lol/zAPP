@@ -1,11 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 const { ipcMain } = require('electron');
+const fetch = require('node-fetch');
 const hydrogenAPI = require('./hydrogen-api');
 const autoexecuteManager = require('./autoexecute-manager');
 const dataManager = require('./data-manager');
 
 const IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+const SCRIPTBLOX_BASE_URL = 'https://scriptblox.com';
+const SCRIPTBLOX_TIMEOUT_MS = 10000;
+const SCRIPTBLOX_MAX_LIMIT = 20;
 
 function sanitizeScriptId(rawId) {
     if (typeof rawId !== 'string') return null;
@@ -117,6 +121,53 @@ function getScriptSettings(settingsMap, script) {
     return settingsMap?.[script.id] || settingsMap?.[script.name] || null;
 }
 
+function withTimeout(promise, timeoutMs, errorMessage) {
+    let timeoutId = null;
+    const timeoutPromise = new Promise((resolve, reject) => {
+        timeoutId = setTimeout(() => {
+            reject(new Error(errorMessage));
+        }, timeoutMs);
+    });
+
+    return Promise.race([promise, timeoutPromise]).finally(() => {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+    });
+}
+
+async function fetchScriptBloxJson(pathname, queryParams = null) {
+    const url = new URL(pathname, SCRIPTBLOX_BASE_URL);
+    if (queryParams && typeof queryParams === 'object') {
+        Object.entries(queryParams).forEach(([key, value]) => {
+            if (value === null || typeof value === 'undefined' || value === '') return;
+            url.searchParams.set(key, String(value));
+        });
+    }
+
+    const response = await withTimeout(
+        fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                accept: 'application/json',
+                'user-agent': 'Zyron/1.5'
+            }
+        }),
+        SCRIPTBLOX_TIMEOUT_MS,
+        'ScriptBlox request timed out.'
+    );
+
+    if (!response.ok) {
+        throw new Error(`ScriptBlox request failed (${response.status}).`);
+    }
+
+    const payload = await response.json();
+    if (payload?.message && !payload?.result && !payload?.script) {
+        throw new Error(String(payload.message));
+    }
+    return payload || {};
+}
+
 ipcMain.handle('get-scripts', async () => {
     try {
         return discoverScripts();
@@ -137,6 +188,7 @@ ipcMain.handle('execute-hub-script', async (event, scriptPath, savedKey = null) 
 
 ipcMain.handle('sync-script-hub-autoexecute', async (event, payload = {}) => {
     try {
+        const forceDisable = Boolean(payload?.forceDisable);
         const scripts = discoverScripts();
         const appDataResult = await dataManager.loadAppData();
         if (!appDataResult.success) {
@@ -146,7 +198,7 @@ ipcMain.handle('sync-script-hub-autoexecute', async (event, payload = {}) => {
         const settingsMap = appDataResult.data?.scriptSettings || {};
         const syncEntries = scripts.map((script) => {
             const settings = getScriptSettings(settingsMap, script) || {};
-            let enabled = Boolean(script.supportsExecuteOnJoin && settings.executeOnJoin);
+            let enabled = !forceDisable && Boolean(script.supportsExecuteOnJoin && settings.executeOnJoin);
             let content = '';
             if (enabled) {
                 try {
@@ -167,6 +219,93 @@ ipcMain.handle('sync-script-hub-autoexecute', async (event, payload = {}) => {
             executor: payload.executor,
             scripts: syncEntries
         });
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('scriptblox-trending', async () => {
+    try {
+        const payload = await fetchScriptBloxJson('/api/script/trending');
+        const scripts = Array.isArray(payload?.result?.scripts) ? payload.result.scripts : [];
+        return {
+            success: true,
+            result: {
+                max: Number(payload?.result?.max) || scripts.length,
+                scripts
+            }
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('scriptblox-search', async (event, options = {}) => {
+    try {
+        const query = String(options?.query ?? options?.q ?? '').trim();
+        if (!query) {
+            return {
+                success: true,
+                result: {
+                    totalPages: 1,
+                    page: 1,
+                    max: SCRIPTBLOX_MAX_LIMIT,
+                    scripts: []
+                }
+            };
+        }
+
+        const pageValue = Math.floor(Number(options?.page));
+        const maxValue = Math.floor(Number(options?.max));
+        const page = Number.isFinite(pageValue) && pageValue > 0 ? pageValue : 1;
+        const max = Number.isFinite(maxValue) && maxValue > 0
+            ? Math.min(SCRIPTBLOX_MAX_LIMIT, maxValue)
+            : SCRIPTBLOX_MAX_LIMIT;
+
+        const payload = await fetchScriptBloxJson('/api/script/search', {
+            q: query,
+            page,
+            max
+        });
+        const scripts = Array.isArray(payload?.result?.scripts) ? payload.result.scripts : [];
+        const totalPages = Math.max(1, Number(payload?.result?.totalPages) || 1);
+
+        return {
+            success: true,
+            result: {
+                totalPages,
+                page: Math.min(page, totalPages),
+                max,
+                scripts
+            }
+        };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+});
+
+ipcMain.handle('scriptblox-get-script-content', async (event, scriptIdentifier) => {
+    try {
+        const normalizedIdentifier = String(scriptIdentifier || '').trim();
+        if (!normalizedIdentifier) {
+            return { success: false, error: 'Script identifier is required.' };
+        }
+
+        let content = '';
+        try {
+            const payload = await fetchScriptBloxJson(`/api/script/${encodeURIComponent(normalizedIdentifier)}`);
+            if (typeof payload?.script?.script === 'string') {
+                content = payload.script.script;
+            }
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+
+        if (!content || !content.trim()) {
+            return { success: false, error: 'Script content is unavailable.' };
+        }
+
+        return { success: true, content };
     } catch (error) {
         return { success: false, error: error.message };
     }

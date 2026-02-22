@@ -10,11 +10,54 @@ const DATA_DIR = isDevelopment
     : path.join(os.homedir(), 'Documents', 'zyronData');
 const DATA_FILE = path.join(DATA_DIR, 'zyron_app_data.json');
 const DEFAULT_WORKSPACE_ID = 'ws-scripts';
+const DATA_FORMAT_TAG = 'zyron-app-data';
+const DATA_SCHEMA_VERSION = '1.5.0';
+const KNOWN_LEGACY_SHAPES = new Set([
+    'legacy-array',
+    'legacy-flat',
+    'legacy-partial-envelope',
+    'invalid-object',
+    'corrupt-json'
+]);
 
 if (!isDevelopment && !fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
 } else if (isDevelopment && !fs.existsSync(DATA_DIR)) {
     fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+function getAppVersionSafe() {
+    try {
+        const version = app.getVersion();
+        return typeof version === 'string' && version.trim() ? version.trim() : 'unknown';
+    } catch (error) {
+        return 'unknown';
+    }
+}
+
+function getIsoTimestamp(value, fallback = null) {
+    if (typeof value !== 'string' || !value.trim()) {
+        return fallback;
+    }
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) {
+        return fallback;
+    }
+    return new Date(parsed).toISOString();
+}
+
+function normalizeScriptSettings(rawScriptSettings) {
+    if (!rawScriptSettings || typeof rawScriptSettings !== 'object' || Array.isArray(rawScriptSettings)) {
+        return {};
+    }
+    const normalized = {};
+    Object.entries(rawScriptSettings).forEach(([key, value]) => {
+        if (typeof key !== 'string') return;
+        const cleanKey = key.trim();
+        if (!cleanKey) return;
+        normalized[cleanKey] = value;
+    });
+    return normalized;
 }
 
 function createDefaultData() {
@@ -35,7 +78,7 @@ function createDefaultData() {
 }
 
 function normalizePreferences(rawPreferences) {
-    if (!rawPreferences || typeof rawPreferences !== 'object') {
+    if (!rawPreferences || typeof rawPreferences !== 'object' || Array.isArray(rawPreferences)) {
         return {};
     }
     const normalized = {};
@@ -48,15 +91,154 @@ function normalizePreferences(rawPreferences) {
     return normalized;
 }
 
+function buildDefaultMeta({ createdAt = null, updatedAt = null, legacySource = null } = {}) {
+    const now = new Date().toISOString();
+    const normalizedCreatedAt = getIsoTimestamp(createdAt, now);
+    const normalizedUpdatedAt = getIsoTimestamp(updatedAt, normalizedCreatedAt);
+    const legacyValue = typeof legacySource === 'string' && legacySource.trim()
+        ? legacySource.trim()
+        : null;
+    return {
+        format: DATA_FORMAT_TAG,
+        schemaVersion: DATA_SCHEMA_VERSION,
+        appVersion: getAppVersionSafe(),
+        createdAt: normalizedCreatedAt,
+        updatedAt: normalizedUpdatedAt,
+        legacySource: legacyValue
+    };
+}
+
+function normalizeMeta(rawMeta, { legacySource = null } = {}) {
+    const source = rawMeta && typeof rawMeta === 'object' && !Array.isArray(rawMeta)
+        ? rawMeta
+        : {};
+    const now = new Date().toISOString();
+    const createdAt = getIsoTimestamp(source.createdAt, now);
+    const updatedAt = getIsoTimestamp(source.updatedAt, createdAt);
+    const sourceLegacy = typeof source.legacySource === 'string' && source.legacySource.trim()
+        ? source.legacySource.trim()
+        : null;
+    const forcedLegacy = typeof legacySource === 'string' && legacySource.trim()
+        ? legacySource.trim()
+        : null;
+
+    return {
+        format: DATA_FORMAT_TAG,
+        schemaVersion: DATA_SCHEMA_VERSION,
+        appVersion: typeof source.appVersion === 'string' && source.appVersion.trim()
+            ? source.appVersion.trim()
+            : getAppVersionSafe(),
+        createdAt,
+        updatedAt,
+        legacySource: forcedLegacy || sourceLegacy || null
+    };
+}
+
+function isMetaEnvelopeOutdated(rawMeta) {
+    if (!rawMeta || typeof rawMeta !== 'object' || Array.isArray(rawMeta)) {
+        return true;
+    }
+
+    if (rawMeta.format !== DATA_FORMAT_TAG) return true;
+    if (rawMeta.schemaVersion !== DATA_SCHEMA_VERSION) return true;
+    if (typeof rawMeta.appVersion !== 'string' || !rawMeta.appVersion.trim()) return true;
+    if (!getIsoTimestamp(rawMeta.createdAt)) return true;
+    if (!getIsoTimestamp(rawMeta.updatedAt)) return true;
+    if (Object.prototype.hasOwnProperty.call(rawMeta, 'tags')) return true;
+
+    return false;
+}
+
+function hasLegacyFields(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+        return false;
+    }
+    return [
+        'tabs',
+        'scriptSettings',
+        'username',
+        'workspaces',
+        'autoExecute',
+        'preferences'
+    ].some((field) => Object.prototype.hasOwnProperty.call(raw, field));
+}
+
+function unwrapStoredPayload(rawPayload) {
+    if (Array.isArray(rawPayload)) {
+        return {
+            sourceType: 'legacy-array',
+            data: { ...createDefaultData(), tabs: rawPayload },
+            meta: null
+        };
+    }
+
+    if (!rawPayload || typeof rawPayload !== 'object') {
+        return {
+            sourceType: 'invalid-object',
+            data: createDefaultData(),
+            meta: null
+        };
+    }
+
+    const payloadMeta = rawPayload.meta;
+    const payloadData = rawPayload.data;
+    if (
+        payloadData
+        && typeof payloadData === 'object'
+        && !Array.isArray(payloadData)
+        && Object.prototype.hasOwnProperty.call(rawPayload, 'meta')
+    ) {
+        return {
+            sourceType: 'envelope',
+            data: payloadData,
+            meta: payloadMeta
+        };
+    }
+
+    if (payloadData && typeof payloadData === 'object' && !Array.isArray(payloadData)) {
+        return {
+            sourceType: 'legacy-partial-envelope',
+            data: payloadData,
+            meta: payloadMeta || null
+        };
+    }
+
+    if (hasLegacyFields(rawPayload)) {
+        return {
+            sourceType: 'legacy-flat',
+            data: rawPayload,
+            meta: null
+        };
+    }
+
+    return {
+        sourceType: 'invalid-object',
+        data: createDefaultData(),
+        meta: null
+    };
+}
+
+function ensureUniqueId(preferredId, usedIds, fallbackPrefix) {
+    const initial = (typeof preferredId === 'string' && preferredId.trim()) ? preferredId.trim() : fallbackPrefix;
+    let candidate = initial;
+    let index = 2;
+    while (usedIds.has(candidate)) {
+        candidate = `${initial}-${index}`;
+        index += 1;
+    }
+    usedIds.add(candidate);
+    return candidate;
+}
+
 function ensureWorkspaceSchema(data) {
     const source = data && typeof data === 'object' ? data : createDefaultData();
 
     const tabs = Array.isArray(source.tabs) ? source.tabs : [];
-    const scriptSettings = source.scriptSettings && typeof source.scriptSettings === 'object'
-        ? source.scriptSettings
-        : {};
-    const username = Object.prototype.hasOwnProperty.call(source, 'username') ? source.username : null;
-    const autoExecute = source.autoExecute && typeof source.autoExecute === 'object'
+    const scriptSettings = normalizeScriptSettings(source.scriptSettings);
+    const username = typeof source.username === 'string' && source.username.trim()
+        ? source.username.trim()
+        : null;
+    const autoExecute = source.autoExecute && typeof source.autoExecute === 'object' && !Array.isArray(source.autoExecute)
         ? source.autoExecute
         : {};
     const preferences = normalizePreferences(source.preferences);
@@ -66,16 +248,26 @@ function ensureWorkspaceSchema(data) {
         workspaces = [{ id: DEFAULT_WORKSPACE_ID, name: 'scripts', tabOrder: [] }];
     }
 
+    const usedWorkspaceIds = new Set();
     const normalizedWorkspaces = workspaces.map((workspace, index) => {
-        const workspaceId = typeof workspace?.id === 'string' && workspace.id.trim()
+        const preferredWorkspaceId = typeof workspace?.id === 'string' && workspace.id.trim()
             ? workspace.id.trim()
-            : `${DEFAULT_WORKSPACE_ID}-${index}`;
+            : `${DEFAULT_WORKSPACE_ID}-${index + 1}`;
+        const workspaceId = ensureUniqueId(preferredWorkspaceId, usedWorkspaceIds, `${DEFAULT_WORKSPACE_ID}-${index + 1}`);
         const workspaceName = typeof workspace?.name === 'string' && workspace.name.trim()
             ? workspace.name.trim()
             : `workspace ${index + 1}`;
-        const tabOrder = Array.isArray(workspace?.tabOrder)
-            ? workspace.tabOrder.filter((tabId) => typeof tabId === 'string')
+        const rawTabOrder = Array.isArray(workspace?.tabOrder)
+            ? workspace.tabOrder
             : [];
+        const seenOrderIds = new Set();
+        const tabOrder = rawTabOrder
+            .map((tabId) => (typeof tabId === 'string' ? tabId.trim() : ''))
+            .filter((tabId) => {
+                if (!tabId || seenOrderIds.has(tabId)) return false;
+                seenOrderIds.add(tabId);
+                return true;
+            });
         return {
             id: workspaceId,
             name: workspaceName,
@@ -90,11 +282,15 @@ function ensureWorkspaceSchema(data) {
     const workspaceIds = new Set(normalizedWorkspaces.map((workspace) => workspace.id));
     const firstWorkspaceId = normalizedWorkspaces[0].id;
 
+    const usedTabIds = new Set();
     const normalizedTabs = tabs.map((tab, index) => {
-        const id = typeof tab?.id === 'string' && tab.id.trim() ? tab.id.trim() : `tab-${Date.now()}-${index}`;
+        const preferredTabId = typeof tab?.id === 'string' && tab.id.trim()
+            ? tab.id.trim()
+            : `tab-${Date.now()}-${index + 1}`;
+        const id = ensureUniqueId(preferredTabId, usedTabIds, `tab-${Date.now()}-${index + 1}`);
         const name = typeof tab?.name === 'string' && tab.name.trim() ? tab.name.trim() : `Script ${index + 1}`;
         const content = typeof tab?.content === 'string' ? tab.content : '';
-        const requestedWorkspaceId = typeof tab?.workspaceId === 'string' ? tab.workspaceId : firstWorkspaceId;
+        const requestedWorkspaceId = typeof tab?.workspaceId === 'string' ? tab.workspaceId.trim() : firstWorkspaceId;
         const workspaceId = workspaceIds.has(requestedWorkspaceId) ? requestedWorkspaceId : firstWorkspaceId;
         return {
             id,
@@ -105,11 +301,34 @@ function ensureWorkspaceSchema(data) {
     });
 
     normalizedWorkspaces.forEach((workspace) => {
-        const validOrder = workspace.tabOrder.filter((tabId) => normalizedTabs.some((tab) => tab.id === tabId));
+        const seenValidOrder = new Set();
+        const validOrder = workspace.tabOrder.filter((tabId) => {
+            if (seenValidOrder.has(tabId)) return false;
+            const exists = normalizedTabs.some((tab) => tab.id === tabId && tab.workspaceId === workspace.id);
+            if (!exists) return false;
+            seenValidOrder.add(tabId);
+            return true;
+        });
         const missingTabs = normalizedTabs
             .filter((tab) => tab.workspaceId === workspace.id && !validOrder.includes(tab.id))
             .map((tab) => tab.id);
         workspace.tabOrder = [...validOrder, ...missingTabs];
+    });
+
+    const validTabIds = new Set(normalizedTabs.map((tab) => tab.id));
+    const normalizedAutoExecute = {};
+    Object.entries(autoExecute).forEach(([tabId, entry]) => {
+        const cleanTabId = typeof tabId === 'string' ? tabId.trim() : '';
+        if (!cleanTabId || !validTabIds.has(cleanTabId)) return;
+        if (!entry || typeof entry !== 'object') return;
+
+        const serial = Number(entry.serial);
+        if (!Number.isFinite(serial) || serial <= 0) return;
+
+        normalizedAutoExecute[cleanTabId] = {
+            enabled: Boolean(entry.enabled),
+            serial: Math.floor(serial)
+        };
     });
 
     return {
@@ -117,7 +336,7 @@ function ensureWorkspaceSchema(data) {
         scriptSettings,
         username,
         workspaces: normalizedWorkspaces,
-        autoExecute,
+        autoExecute: normalizedAutoExecute,
         preferences
     };
 }
@@ -138,46 +357,73 @@ function createBackup() {
     }
 }
 
+function createCorruptBackup(fileContent) {
+    try {
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupFile = path.join(DATA_DIR, `zyron_app_data_corrupt_${timestamp}.json`);
+        fs.writeFileSync(backupFile, fileContent, 'utf8');
+        console.warn(`Corrupt data backup created: ${backupFile}`);
+        return { success: true, backupFile };
+    } catch (error) {
+        console.error('Failed to create corrupt data backup:', error);
+        return { success: false, error: error.message };
+    }
+}
+
 async function loadAppData() {
     try {
         if (!fs.existsSync(DATA_FILE)) {
-            return { success: true, data: null };
-        }
-        const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
-        let data = JSON.parse(fileContent);
-        
-        let needsMigration = false;
-        
-        if (Array.isArray(data)) {
-            console.log('Migrating from legacy array format to new structure...');
-            data = { ...createDefaultData(), tabs: data };
-            needsMigration = true;
-        } else if (data && typeof data === 'object' && data.tabs && !data.scriptSettings) {
-            console.log('Migrating from v1.2 format to v1.3 format...');
-            data.scriptSettings = {};
-            if (!Object.prototype.hasOwnProperty.call(data, 'username')) {
-                data.username = null;
-            }
-            needsMigration = true;
-        } else if (data && typeof data === 'object' && !data.tabs && !data.scriptSettings) {
-            console.log('Initializing empty data structure...');
-            data = createDefaultData();
-            needsMigration = true;
-        } else if (data && typeof data === 'object' && !Object.prototype.hasOwnProperty.call(data, 'username')) {
-            data.username = null;
-            needsMigration = true;
+            return { success: true, data: null, meta: null };
         }
 
-        const normalizedData = ensureWorkspaceSchema(data);
-        const normalizedJson = JSON.stringify(normalizedData);
-        const sourceJson = JSON.stringify(data || {});
-        if (normalizedJson !== sourceJson) {
-            data = normalizedData;
-            needsMigration = true;
-        } else {
-            data = normalizedData;
+        const fileContent = fs.readFileSync(DATA_FILE, 'utf8');
+        let parsedPayload;
+        try {
+            parsedPayload = JSON.parse(fileContent);
+        } catch (parseError) {
+            console.error('Failed to parse app data JSON, attempting recovery:', parseError.message);
+            createCorruptBackup(fileContent);
+
+            const recoveredData = createDefaultData();
+            const recoveredMeta = buildDefaultMeta({ legacySource: 'corrupt-json' });
+            const recoverySaveResult = await saveAppData(recoveredData, {
+                meta: recoveredMeta,
+                legacySource: 'corrupt-json'
+            });
+            if (!recoverySaveResult.success) {
+                return { success: false, error: recoverySaveResult.error, data: null, meta: null };
+            }
+
+            return {
+                success: true,
+                data: recoveredData,
+                meta: recoverySaveResult.meta || recoveredMeta
+            };
         }
-        
+
+        const unwrappedPayload = unwrapStoredPayload(parsedPayload);
+        const sourceType = unwrappedPayload.sourceType;
+        const normalizedData = ensureWorkspaceSchema(unwrappedPayload.data);
+        const legacySource = KNOWN_LEGACY_SHAPES.has(sourceType) && sourceType !== 'envelope'
+            ? sourceType
+            : null;
+        const normalizedMeta = normalizeMeta(unwrappedPayload.meta, { legacySource });
+
+        let needsMigration = sourceType !== 'envelope';
+        if (!needsMigration) {
+            const sourceData = (unwrappedPayload.data && typeof unwrappedPayload.data === 'object')
+                ? unwrappedPayload.data
+                : {};
+            const sourceDataJson = JSON.stringify(sourceData);
+            const normalizedDataJson = JSON.stringify(normalizedData);
+            if (sourceDataJson !== normalizedDataJson) {
+                needsMigration = true;
+            }
+            if (isMetaEnvelopeOutdated(unwrappedPayload.meta)) {
+                needsMigration = true;
+            }
+        }
+
         if (needsMigration) {
             console.log('Creating backup before migration...');
             const backupResult = createBackup();
@@ -186,28 +432,65 @@ async function loadAppData() {
             }
             
             console.log('Data migration completed. Saving migrated data...');
-            const saveResult = await saveAppData(data);
+            const saveResult = await saveAppData(normalizedData, {
+                meta: normalizedMeta,
+                legacySource: normalizedMeta.legacySource || legacySource || null
+            });
             if (!saveResult.success) {
                 console.error('Failed to save migrated data:', saveResult.error);
+                return { success: false, error: saveResult.error, data: null, meta: null };
             } else {
                 console.log('Migrated data saved successfully');
             }
+
+            return {
+                success: true,
+                data: normalizedData,
+                meta: saveResult.meta || normalizedMeta
+            };
         }
-        
-        return { success: true, data };
+
+        return {
+            success: true,
+            data: normalizedData,
+            meta: normalizedMeta
+        };
     } catch (error) {
         console.error('Failed to load app data:', error.message);
-        return { success: false, error: error.message, data: null };
+        return { success: false, error: error.message, data: null, meta: null };
     }
 }
 
-async function saveAppData(dataToSave) {
+async function saveAppData(dataToSave, { meta = null, legacySource = null } = {}) {
+    const tempFilePath = `${DATA_FILE}.tmp`;
     try {
-        const jsonString = JSON.stringify(dataToSave, null, 4);
-        fs.writeFileSync(DATA_FILE, jsonString, 'utf8');
-        return { success: true, message: 'Data saved successfully' };
+        const normalizedData = ensureWorkspaceSchema(dataToSave);
+        const normalizedMeta = normalizeMeta(meta, { legacySource });
+        normalizedMeta.appVersion = getAppVersionSafe();
+        normalizedMeta.updatedAt = new Date().toISOString();
+
+        const payload = {
+            meta: normalizedMeta,
+            data: normalizedData
+        };
+
+        const jsonString = JSON.stringify(payload, null, 4);
+        fs.writeFileSync(tempFilePath, jsonString, 'utf8');
+        fs.renameSync(tempFilePath, DATA_FILE);
+        return {
+            success: true,
+            message: 'Data saved successfully',
+            meta: normalizedMeta
+        };
     } catch (error) {
         console.error('Failed to save app data:', error.message);
+        try {
+            if (fs.existsSync(tempFilePath)) {
+                fs.unlinkSync(tempFilePath);
+            }
+        } catch (cleanupError) {
+            console.error('Failed cleaning up temp data file:', cleanupError.message);
+        }
         return { success: false, error: error.message };
     }
 }
@@ -249,10 +532,18 @@ ipcMain.handle('load-state', async () => {
 ipcMain.handle('save-state', async (event, payload) => {
     try {
         const existingResult = await loadAppData();
+        if (!existingResult.success) {
+            return { success: false, error: existingResult.error || 'Failed to load app data before save.' };
+        }
+
         let fullData = existingResult.data;
+        let fullMeta = existingResult.meta;
         
         if (!fullData) {
             fullData = createDefaultData();
+        }
+        if (!fullMeta) {
+            fullMeta = buildDefaultMeta();
         }
 
         const tabsData = Array.isArray(payload)
@@ -268,7 +559,7 @@ ipcMain.handle('save-state', async (event, payload) => {
         fullData.autoExecute = autoExecuteData;
         fullData = ensureWorkspaceSchema(fullData);
         
-        const result = await saveAppData(fullData);
+        const result = await saveAppData(fullData, { meta: fullMeta });
         return result;
     } catch (error) {
         console.error('Error saving state:', error);
@@ -293,14 +584,22 @@ ipcMain.handle('load-username', async () => {
 ipcMain.handle('save-username', async (event, username) => {
     try {
         const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
         let data = result.data;
+        let meta = result.meta;
 
         if (!data) {
             data = createDefaultData();
         }
+        if (!meta) {
+            meta = buildDefaultMeta();
+        }
 
         data.username = username;
-        const saveResult = await saveAppData(data);
+        const saveResult = await saveAppData(data, { meta });
         return saveResult;
     } catch (error) {
         console.error('Error saving username:', error);
@@ -369,6 +668,7 @@ ipcMain.handle('preferences-set-many', async (event, updates) => {
         }
 
         const data = result.data || createDefaultData();
+        const meta = result.meta || buildDefaultMeta();
         const existingPreferences = normalizePreferences(data.preferences);
         const normalizedUpdates = normalizePreferences(updates);
         data.preferences = {
@@ -376,7 +676,7 @@ ipcMain.handle('preferences-set-many', async (event, updates) => {
             ...normalizedUpdates
         };
 
-        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data), { meta });
         return saveResult.success
             ? { success: true, preferences: data.preferences }
             : saveResult;
@@ -398,11 +698,12 @@ ipcMain.handle('preferences-set', async (event, key, value) => {
         }
 
         const data = result.data || createDefaultData();
+        const meta = result.meta || buildDefaultMeta();
         const preferences = normalizePreferences(data.preferences);
         preferences[key] = String(value);
         data.preferences = preferences;
 
-        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data), { meta });
         return saveResult.success
             ? { success: true, key, value: preferences[key] }
             : saveResult;
@@ -424,11 +725,12 @@ ipcMain.handle('preferences-remove', async (event, key) => {
         }
 
         const data = result.data || createDefaultData();
+        const meta = result.meta || buildDefaultMeta();
         const preferences = normalizePreferences(data.preferences);
         delete preferences[key];
         data.preferences = preferences;
 
-        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data), { meta });
         return saveResult.success
             ? { success: true, key }
             : saveResult;
@@ -446,9 +748,10 @@ ipcMain.handle('preferences-clear', async () => {
         }
 
         const data = result.data || createDefaultData();
+        const meta = result.meta || buildDefaultMeta();
         data.preferences = {};
 
-        const saveResult = await saveAppData(ensureWorkspaceSchema(data));
+        const saveResult = await saveAppData(ensureWorkspaceSchema(data), { meta });
         return saveResult.success ? { success: true } : saveResult;
     } catch (error) {
         console.error('Error clearing preferences:', error);
@@ -475,10 +778,18 @@ function resolveScriptSettingKeys(scriptRef) {
 ipcMain.handle('save-script-settings', async (event, scriptRef, settings) => {
     try {
         const result = await loadAppData();
+        if (!result.success) {
+            return { success: false, error: result.error };
+        }
+
         let data = result.data;
+        let meta = result.meta;
         
         if (!data) {
             data = createDefaultData();
+        }
+        if (!meta) {
+            meta = buildDefaultMeta();
         }
         
         if (!data.scriptSettings) {
@@ -497,7 +808,7 @@ ipcMain.handle('save-script-settings', async (event, scriptRef, settings) => {
             }
         });
         
-        const saveResult = await saveAppData(data);
+        const saveResult = await saveAppData(data, { meta });
         return saveResult;
     } catch (error) {
         console.error('Error saving script settings:', error);
