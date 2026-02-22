@@ -1,7 +1,7 @@
 #!/bin/bash
 
 readonly APPLICATION_NAME="Zyron"
-readonly APPLICATION_VERSION="1.4.1"
+readonly APPLICATION_VERSION="1.5.0"
 readonly SOURCE_USER="a-guy-lol"
 readonly SOURCE_REPOSITORY="zAPP"
 readonly TARGET_DIRECTORY="/Applications"
@@ -143,11 +143,11 @@ display_success "Latest version: $TAG_NAME"
 
 # Find the appropriate installer URL based on architecture
 if [[ "$ARCH" == "arm64" ]]; then
-    INSTALLER_PATTERN="[Aa]rm64.*\.zip|[Uu]niversal.*\.zip"
-    FALLBACK_PATTERN="[Aa]rm64.*\.dmg|[Uu]niversal.*\.dmg"
+    INSTALLER_PATTERN="[Aa]rm64.*\.zip"
+    FALLBACK_PATTERN="[Aa]rm64.*\.dmg"
 else
-    INSTALLER_PATTERN="[Ii]ntel.*\.zip|[Xx]64.*\.zip|[Uu]niversal.*\.zip"
-    FALLBACK_PATTERN="[Ii]ntel.*\.dmg|[Xx]64.*\.dmg|[Uu]niversal.*\.dmg"
+    INSTALLER_PATTERN="[Ii]ntel.*\.zip|[Xx]64.*\.zip"
+    FALLBACK_PATTERN="[Ii]ntel.*\.dmg|[Xx]64.*\.dmg"
 fi
 
 # Try ZIP first

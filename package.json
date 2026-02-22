@@ -1,6 +1,6 @@
 {
   "name": "zyronui",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "luaU script editor",
   "main": "core/main.js",
   "scripts": {
@@ -38,7 +38,8 @@
         {
           "target": "zip",
           "arch": [
-            "universal"
+            "x64",
+            "arm64"
           ]
         }
       ],

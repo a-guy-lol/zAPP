@@ -1,6 +1,8 @@
 # Build and dependency files
 node_modules/
 dist/
+dev-data/
+.idea/
 
 # macOS
 .DS_Store

@@ -36,6 +36,18 @@ fi
 echo "📝 Updating package.json version to $VERSION"
 sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
 
+# Keep release artifacts architecture-specific (x64 + arm64), not universal.
+echo "📝 Setting release targets to x64 + arm64"
+node -e "
+const fs = require('fs');
+const filePath = 'package.json';
+const pkg = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+pkg.build = pkg.build || {};
+pkg.build.mac = pkg.build.mac || {};
+pkg.build.mac.target = [{ target: 'zip', arch: ['x64', 'arm64'] }];
+fs.writeFileSync(filePath, JSON.stringify(pkg, null, 2) + '\n');
+"
+
 # Update build.sh version
 echo "📝 Updating build.sh version to $VERSION"
 sed -i '' "s/readonly APPLICATION_VERSION=\".*\"/readonly APPLICATION_VERSION=\"$VERSION\"/" build.sh

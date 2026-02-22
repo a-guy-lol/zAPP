@@ -4,7 +4,7 @@ Formerly known as **ZexonUI**, **Zyron** is a sleek, modern script editor that c
 
 ## ✨ Features
 
-- 🖥️ **Universal Support**: Works on both Apple Silicon (M1/M2/M3) and Intel Macs
+- 🖥️ **Architecture-Specific Builds**: Separate builds for Apple Silicon (`arm64`) and Intel (`x64`)
 - ⛓️‍💥 **Hydrogen Integration**: Direct connection to Hydrogen for script execution
 - 🎨 **Modern UI**: Clean, intuitive interface designed for productivity
 - 🧱 **Easy Installation**: One-command installation with no dependencies required
@@ -24,7 +24,7 @@ If you prefer manual installation, download the latest release:\
 **Warning: This method is not recommended as they are not verified**
 
 **For Intel Macs and Apple Silicon (M1/M2/M3):**
-- Download the universal DMG from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
+- Download the matching `arm64` or `x64` build from [Releases](https://github.com/a-guy-lol/zAPP/releases/latest)
 
 
 ## 📸 Screenshots

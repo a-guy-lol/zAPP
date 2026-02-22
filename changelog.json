@@ -1,6 +1,17 @@
 {
-  "latestVersion": "1.4.1",
+  "latestVersion": "1.5.0",
   "changelogs": [
+{
+  "version": "1.5.0",
+  "date": "2026-02-22",
+  "changes": [
+    "Release artifacts now build as separate x64 and arm64 ZIP files (no universal primary target)",
+    "Installer now prefers architecture-matching assets (arm64 on Apple Silicon, x64 on Intel)",
+    "App updater now selects architecture-specific update ZIPs first, with universal only as fallback",
+    "Release script now enforces architecture-specific ZIP targets for tagged releases"
+  ]
+},
+
 {
   "version": "1.4.1",
   "date": "2026-02-15",

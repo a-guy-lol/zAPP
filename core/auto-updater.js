@@ -99,14 +99,18 @@ function pickZipAsset(release) {
   if (!zipAssets.length) return null;
 
   const preferredArch = process.arch === 'arm64' ? 'arm64' : 'x64';
-  const universal = zipAssets.find((asset) => /universal.*\.zip$/i.test(asset.name));
-  if (universal) return universal;
+  const archTokens = preferredArch === 'arm64'
+    ? ['arm64', 'aarch64', 'apple-silicon']
+    : ['x64', 'intel', 'amd64'];
 
   const archMatch = zipAssets.find((asset) => {
     const name = String(asset.name || '').toLowerCase();
-    return name.includes(preferredArch);
+    return archTokens.some((token) => name.includes(token));
   });
   if (archMatch) return archMatch;
+
+  const universal = zipAssets.find((asset) => /universal.*\.zip$/i.test(asset.name));
+  if (universal) return universal;
 
   return zipAssets[0];
 }
@@ -132,6 +136,7 @@ async function getLatestUpdateCandidate() {
   if (!zipAsset || !zipAsset.browser_download_url) {
     throw new Error('No ZIP update asset found in latest release.');
   }
+  sendUpdateLog(`Selected update asset for ${process.arch}: ${zipAsset.name}`);
 
   return {
     hasUpdate: true,
