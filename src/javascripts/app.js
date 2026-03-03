@@ -340,6 +340,7 @@ function compareVersions(versionA, versionB) {
 }
 
 function getExecutorLabel(executor = selectedExecutor) {
+    if (executor === 'auto') return 'Auto';
     return executor === 'macsploit' ? 'MacSploit' : 'Hydrogen';
 }
 
@@ -589,22 +590,33 @@ async function persistUsername(username) {
 window.persistUsername = persistUsername;
 
 function normalizeExecutor(executor) {
-    return executor === 'macsploit' ? 'macsploit' : 'hydrogen';
+    if (executor === 'hydrogen') return 'hydrogen';
+    if (executor === 'macsploit') return 'macsploit';
+    return 'auto';
 }
 
-function updateExecutorSelectorUI() {
+function updateExecutorSelectorUI(resolvedExecutor = null) {
     const iconByExecutor = {
+        auto: 'assets/images/loop.png',
         hydrogen: 'assets/images/Hydrogen.png',
         macsploit: 'assets/images/MacSploit.png'
     };
     const labelByExecutor = {
+        auto: 'Auto',
         hydrogen: 'Hydrogen',
         macsploit: 'MacSploit'
     };
 
-    executorSelectedIcon.src = iconByExecutor[selectedExecutor];
-    executorSelectedIcon.alt = labelByExecutor[selectedExecutor];
-    executorSelectedLabel.textContent = labelByExecutor[selectedExecutor];
+    const displayExecutor = selectedExecutor === 'auto' && resolvedExecutor && resolvedExecutor !== 'auto'
+        ? resolvedExecutor
+        : selectedExecutor;
+    const displayLabel = selectedExecutor === 'auto' && resolvedExecutor && resolvedExecutor !== 'auto'
+        ? `${labelByExecutor[resolvedExecutor]} (Auto)`
+        : labelByExecutor[displayExecutor];
+
+    executorSelectedIcon.src = iconByExecutor[displayExecutor];
+    executorSelectedIcon.alt = displayLabel;
+    executorSelectedLabel.textContent = displayLabel;
 
     executorOptions.forEach((option) => {
         option.classList.toggle('active', option.dataset.executor === selectedExecutor);
@@ -627,8 +639,7 @@ async function setSelectedExecutor(executor, { persist = true, notify = false } 
     }
 
     if (notify) {
-        const label = normalizedExecutor === 'macsploit' ? 'MacSploit' : 'Hydrogen';
-        showNotification(`Executor switched to ${label}`, 'info');
+        showNotification(`Executor switched to ${getExecutorLabel(normalizedExecutor)}`, 'info');
     }
 
     updateConsoleSidePanelInfo();

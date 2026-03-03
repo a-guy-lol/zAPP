@@ -15,7 +15,17 @@ async function checkConnection() {
         return false;
     }
 
-    const isRobloxConnected = await window.electronAPI.checkConnection();
+    const statusResult = await window.electronAPI.checkConnection();
+    const isRobloxConnected = typeof statusResult === 'object'
+        ? Boolean(statusResult.connected)
+        : Boolean(statusResult);
+    const resolvedExecutorValue = typeof statusResult === 'object' && statusResult.resolvedExecutor
+        ? String(statusResult.resolvedExecutor)
+        : null;
+
+    if (typeof updateExecutorSelectorUI === 'function') {
+        updateExecutorSelectorUI(isRobloxConnected ? resolvedExecutorValue : null);
+    }
     
     if (robloxStatusIndicator && robloxStatusText) {
         if (isRobloxConnected) {

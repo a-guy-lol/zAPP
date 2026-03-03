@@ -13,7 +13,7 @@ let autoSaveTimeout = null;
 let connectionCheckInterval = null;
 let notificationsEnabled = true;
 let currentFilter = 'all';
-let selectedExecutor = 'hydrogen';
+let selectedExecutor = 'auto';
 let killSwitchEnabled = false;
 let currentScriptForSettings = null;
 

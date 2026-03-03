@@ -3,8 +3,17 @@ const os = require('os');
 const path = require('path');
 const { ipcMain } = require('electron');
 
+const EXECUTORS = ['hydrogen', 'macsploit'];
+
 function normalizeExecutor(executor) {
-    return executor === 'macsploit' ? 'macsploit' : 'hydrogen';
+    if (executor === 'hydrogen') return 'hydrogen';
+    if (executor === 'macsploit') return 'macsploit';
+    return 'auto';
+}
+
+function getTargetExecutors(executor) {
+    const normalized = normalizeExecutor(executor);
+    return normalized === 'auto' ? [...EXECUTORS] : [normalized];
 }
 
 function getAutoexecutePath(executor) {
@@ -57,13 +66,20 @@ function removeAutoexecuteScript(folderPath, id) {
 
 function syncAutoexecuteScripts(payload = {}) {
     const selectedExecutor = normalizeExecutor(payload.executor);
-    const activePath = getAutoexecutePath(selectedExecutor);
-    const inactivePath = getAutoexecutePath(selectedExecutor === 'hydrogen' ? 'macsploit' : 'hydrogen');
+    const targetExecutors = getTargetExecutors(selectedExecutor);
+    const activeTargets = targetExecutors
+        .map((executor) => ({ executor, path: getAutoexecutePath(executor) }))
+        .filter((entry) => fs.existsSync(entry.path));
+    const inactiveTargets = EXECUTORS
+        .filter((executor) => !targetExecutors.includes(executor))
+        .map((executor) => ({ executor, path: getAutoexecutePath(executor) }));
 
-    if (!fs.existsSync(activePath)) {
+    if (activeTargets.length === 0) {
         return {
             success: false,
-            error: "Autoexecute folder doesn't exist for the selected executor."
+            error: selectedExecutor === 'auto'
+                ? "Autoexecute folder doesn't exist for Hydrogen or MacSploit."
+                : "Autoexecute folder doesn't exist for the selected executor."
         };
     }
 
@@ -81,11 +97,16 @@ function syncAutoexecuteScripts(payload = {}) {
             const scriptContent = typeof entry.content === 'string' ? entry.content : '';
 
             if (enabled) {
-                writeAutoexecuteScript(activePath, id, scriptContent);
-                removeAutoexecuteScript(inactivePath, id);
+                activeTargets.forEach((target) => {
+                    writeAutoexecuteScript(target.path, id, scriptContent);
+                });
+                inactiveTargets.forEach((target) => {
+                    removeAutoexecuteScript(target.path, id);
+                });
             } else {
-                removeAutoexecuteScript(activePath, id);
-                removeAutoexecuteScript(inactivePath, id);
+                [...activeTargets, ...inactiveTargets].forEach((target) => {
+                    removeAutoexecuteScript(target.path, id);
+                });
             }
         });
 

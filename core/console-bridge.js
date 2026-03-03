@@ -3,253 +3,104 @@ const os = require('os');
 const path = require('path');
 const { ipcMain, shell } = require('electron');
 
-const SCRIPT_FILE_NAME = 'zyron-rbx-console.txt';
-const LOG_FILE_PREFIX = 'zyron-console-';
-const LOG_FILE_SUFFIX = '.txt';
 const MAX_STORED_LOGS = 5000;
 const MAX_FETCH_LOGS = 500;
 const MAX_MESSAGE_LENGTH = 4000;
-const LOG_POLL_INTERVAL_MS = 120;
-const MAX_READ_CHUNK_BYTES = 512 * 1024;
+const LOG_POLL_INTERVAL_MS = 250;
+const MAX_READ_CHUNK_BYTES = 256 * 1024;
+const INITIAL_READ_BYTES = 0;
+const ROBLOX_LOGS_DIR = path.join(os.homedir(), 'Library', 'Logs', 'Roblox');
+const PLAYER_LOG_PATTERN = /_Player_[^/]+_last\.log$/i;
+const NOISY_PATTERNS = [
+    'settingsurl:',
+    'settings date header',
+    'settings date timestamp',
+    '(appdelegate)',
+    'datamodel loading',
+    'synccookiesfromnativetoengine',
+    'synccookiesfromenginetonative',
+    'setassetfolder',
+    'setextraassetfolder',
+    'evaluating deferred inferred crashes',
+    'updater not found',
+    'hello world',
+    'localstoragehandler',
+    'filedescriptorlimitlog',
+    'mimalloc',
+    'rbxstorage',
+    'wrap-deformer',
+    'dm notification received',
+    'datamodelpatchconfigurer',
+    'surfacecontroller',
+    'scenemanager',
+    'future is bright shadows',
+    'maxcloudassetdimension',
+    'terrain texturearray',
+    'voicechatinternal',
+    'rbxtransport',
+    'httptrace',
+    'websockettrace',
+    'signalrcore',
+    'trackeranimationstreamsourcetrace',
+    'graphics',
+    'ugc',
+    'gamejoinutil',
+    'appmemusagestatus',
+    'asset (image)',
+    'rbxthumb://',
+    'unable to fetch completed survey ids',
+    'audiodevice',
+    'inputdevice',
+    'outputdevice',
+    'discovery-ota',
+    'networkclient',
+    'udmux address',
+    'connecting to udmux server',
+    'robloxgithash',
+    'server robloxgithash',
+    'server version:',
+    'server prefix:',
+    'serverrobloxgithash',
+    'analyticssessionid',
+    'analyticssessionid is',
+    'analytics sessionid',
+    'analytics session id',
+    'megareplicator',
+    'replicator',
+    'client:disconnect',
+    'connection lost',
+    'sending disconnect',
+    'disconnect replication data',
+    'curlinfo_os_errno',
+    'failed to connect to localhost port 5051',
+    'error parsing batch thumbnail request',
+    'invalid image or texture',
+    'requested ids are invalid',
+    'load configs for user key'
+    ,'client peer updating state'
+    ,'application requested close'
+    ,'reason player:'
+];
 
 let mainWindow = null;
 let loggingEnabled = false;
 let consentAccepted = false;
-let selectedExecutor = 'hydrogen';
+let selectedExecutor = 'auto';
 let logPollInterval = null;
 
 let logs = [];
 let nextLogSeq = 1;
-
-const logFileSerialByExecutor = {
-    hydrogen: null,
-    macsploit: null
-};
-
-const logReadStateByExecutor = {
-    hydrogen: { filePath: null, offset: 0, residual: '' },
-    macsploit: { filePath: null, offset: 0, residual: '' }
+let activeLogState = {
+    filePath: null,
+    fileName: null,
+    offset: 0,
+    residual: ''
 };
 
 function normalizeExecutor(executor) {
-    return executor === 'macsploit' ? 'macsploit' : 'hydrogen';
-}
-
-function getAutoexecutePath(executor) {
-    const normalized = normalizeExecutor(executor);
-    if (normalized === 'macsploit') {
-        return path.join(os.homedir(), 'Documents', 'Macsploit Automatic Execution');
-    }
-    return path.join(os.homedir(), 'Hydrogen', 'autoexecute');
-}
-
-function getWorkspacePath(executor) {
-    const normalized = normalizeExecutor(executor);
-    if (normalized === 'macsploit') {
-        return path.join(os.homedir(), 'Documents', 'Macsploit Workspace');
-    }
-    return path.join(os.homedir(), 'Hydrogen', 'workspace');
-}
-
-function getAllAutoexecutePaths() {
-    return {
-        hydrogen: getAutoexecutePath('hydrogen'),
-        macsploit: getAutoexecutePath('macsploit')
-    };
-}
-
-function randomSerial() {
-    return String(Math.floor(10000 + Math.random() * 900000));
-}
-
-function getOrCreateLogSerial(executor) {
-    const normalized = normalizeExecutor(executor);
-    if (!logFileSerialByExecutor[normalized]) {
-        logFileSerialByExecutor[normalized] = randomSerial();
-    }
-    return logFileSerialByExecutor[normalized];
-}
-
-function getLogFileName(executor) {
-    const serial = getOrCreateLogSerial(executor);
-    return `${LOG_FILE_PREFIX}${serial}${LOG_FILE_SUFFIX}`;
-}
-
-function deleteConsoleScriptFile(filePath) {
-    try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-    } catch (error) {
-        console.error(`Failed to delete console script at ${filePath}:`, error.message);
-    }
-}
-
-function safeUnlink(filePath) {
-    try {
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-    } catch (error) {
-        console.error(`Failed to delete file at ${filePath}:`, error.message);
-    }
-}
-
-function buildConsoleCollectorScript(logFileName) {
-    return `local HttpService = game:GetService("HttpService")
-local LogService = game:GetService("LogService")
-
-if type(writefile) ~= "function" or type(appendfile) ~= "function" then
-    return
-end
-
-local LOG_FILE = "${logFileName}"
-local FLUSH_INTERVAL = 0.12
-local MAX_BATCH = 80
-local MAX_QUEUE = 2000
-
-local queue = {}
-local queue_start = 1
-
-local function queue_size()
-    return #queue - queue_start + 1
-end
-
-local function compact_queue_if_needed()
-    if queue_start < 120 then
-        return
-    end
-    local rebuilt = {}
-    for i = queue_start, #queue do
-        rebuilt[#rebuilt + 1] = queue[i]
-    end
-    queue = rebuilt
-    queue_start = 1
-end
-
-local function trim_queue()
-    while queue_size() > MAX_QUEUE do
-        queue[queue_start] = nil
-        queue_start += 1
-    end
-    compact_queue_if_needed()
-end
-
-local function now_iso()
-    return os.date("!%Y-%m-%dT%H:%M:%SZ")
-end
-
-local function normalize_type(message_type)
-    if typeof(message_type) == "EnumItem" then
-        return message_type.Name
-    end
-    return tostring(message_type or "MessageInfo")
-end
-
-local function enqueue(message, message_type)
-    queue[#queue + 1] = {
-        message = tostring(message or ""),
-        type = normalize_type(message_type),
-        time = now_iso()
-    }
-    trim_queue()
-end
-
-local function encode_line(entry)
-    local ok, encoded = pcall(function()
-        return HttpService:JSONEncode(entry)
-    end)
-    if not ok then
-        return nil
-    end
-    return encoded
-end
-
-local function pop_batch(max_count)
-    local available = queue_size()
-    if available <= 0 then
-        return {}
-    end
-
-    local count = math.min(max_count, available)
-    local batch = table.create(count)
-    for i = 1, count do
-        batch[i] = queue[queue_start]
-        queue[queue_start] = nil
-        queue_start += 1
-    end
-    compact_queue_if_needed()
-    return batch
-end
-
-local function requeue_front(batch)
-    if #batch == 0 then
-        return
-    end
-
-    local rebuilt = {}
-    for i = 1, #batch do
-        rebuilt[#rebuilt + 1] = batch[i]
-    end
-    for i = queue_start, #queue do
-        rebuilt[#rebuilt + 1] = queue[i]
-    end
-    queue = rebuilt
-    queue_start = 1
-    trim_queue()
-end
-
-local function flush_once()
-    if queue_size() <= 0 then
-        return
-    end
-
-    local batch = pop_batch(MAX_BATCH)
-    if #batch == 0 then
-        return
-    end
-
-    local lines = table.create(#batch)
-    for i = 1, #batch do
-        local encoded = encode_line(batch[i])
-        if encoded then
-            lines[#lines + 1] = encoded
-        end
-    end
-
-    if #lines == 0 then
-        return
-    end
-
-    local payload = table.concat(lines, "\\n") .. "\\n"
-    local ok = pcall(function()
-        appendfile(LOG_FILE, payload)
-    end)
-
-    if not ok then
-        requeue_front(batch)
-    end
-end
-
-pcall(function()
-    writefile(LOG_FILE, "")
-end)
-
-for _, entry in ipairs(LogService:GetLogHistory()) do
-    enqueue(entry.message, entry.messageType)
-end
-
-LogService.MessageOut:Connect(function(message, message_type)
-    enqueue(message, message_type)
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(FLUSH_INTERVAL)
-        flush_once()
-    end
-end)
-`;
+    if (executor === 'hydrogen') return 'hydrogen';
+    if (executor === 'macsploit') return 'macsploit';
+    return 'auto';
 }
 
 function pushLogs(incomingLogs) {
@@ -282,73 +133,231 @@ function pushLogs(incomingLogs) {
     }
 }
 
+function resetActiveLogState() {
+    activeLogState = {
+        filePath: null,
+        fileName: null,
+        offset: 0,
+        residual: ''
+    };
+}
+
+function getPlayerLogCandidates() {
+    try {
+        if (!fs.existsSync(ROBLOX_LOGS_DIR)) {
+            return [];
+        }
+
+        return fs.readdirSync(ROBLOX_LOGS_DIR, { withFileTypes: true })
+            .filter((dirent) => dirent.isFile() && PLAYER_LOG_PATTERN.test(dirent.name))
+            .map((dirent) => {
+                const filePath = path.join(ROBLOX_LOGS_DIR, dirent.name);
+                let mtimeMs = 0;
+                try {
+                    mtimeMs = fs.statSync(filePath).mtimeMs || 0;
+                } catch (error) {
+                    mtimeMs = 0;
+                }
+                return {
+                    filePath,
+                    fileName: dirent.name,
+                    mtimeMs
+                };
+            })
+            .sort((a, b) => b.mtimeMs - a.mtimeMs);
+    } catch (error) {
+        console.error('Failed to scan Roblox logs folder:', error.message);
+        return [];
+    }
+}
+
+function getLatestPlayerLog() {
+    const candidates = getPlayerLogCandidates();
+    return candidates.length > 0 ? candidates[0] : null;
+}
+
+function ensureActiveLogFile() {
+    const latestLog = getLatestPlayerLog();
+    if (!latestLog) {
+        resetActiveLogState();
+        return {
+            success: false,
+            error: 'No Roblox player log file was found.'
+        };
+    }
+
+    if (activeLogState.filePath === latestLog.filePath) {
+        return {
+            success: true,
+            filePath: activeLogState.filePath,
+            fileName: activeLogState.fileName
+        };
+    }
+
+    let initialOffset = 0;
+    try {
+        const stats = fs.statSync(latestLog.filePath);
+        initialOffset = Math.max(0, (Number(stats.size) || 0) - INITIAL_READ_BYTES);
+    } catch (error) {
+        initialOffset = 0;
+    }
+
+    activeLogState = {
+        filePath: latestLog.filePath,
+        fileName: latestLog.fileName,
+        offset: initialOffset,
+        residual: ''
+    };
+
+    return {
+        success: true,
+        filePath: activeLogState.filePath,
+        fileName: activeLogState.fileName
+    };
+}
+
+function normalizeTimestamp(value) {
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) {
+        return new Date().toISOString();
+    }
+    return new Date(parsed).toISOString();
+}
+
+function classifyOutputSeverity(severity) {
+    if (severity === 'error' || severity === 'critical') return 'MessageError';
+    if (severity === 'warning') return 'MessageWarning';
+    return 'MessageInfo';
+}
+
+function normalizedSourceIncludesError(source) {
+    return String(source || '').toLowerCase().includes('flog::error');
+}
+
+function normalizedSourceIncludesWarning(source) {
+    return String(source || '').toLowerCase().includes('flog::warning');
+}
+
+function shouldDropLogEntry(source, message) {
+    const normalizedSource = String(source || '').toLowerCase();
+    const normalizedMessage = String(message || '').toLowerCase();
+    return NOISY_PATTERNS.some((pattern) => (
+        normalizedSource.includes(pattern)
+        || normalizedMessage.includes(pattern)
+    ));
+}
+
+function parseRobloxLogLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return null;
+
+    const match = trimmed.match(/^([^,]+),[^,]*,[^,]*,[^,\s]+(?:,\s*([A-Za-z]+))?\s+\[([^\]]+)\]\s*(.*)$/);
+    if (!match) return null;
+
+    const [, isoCandidate, severityRaw, sourceRaw, messageRaw] = match;
+    const source = String(sourceRaw || '').trim();
+    const message = String(messageRaw || '').trim();
+    if (!message) return null;
+    if (shouldDropLogEntry(source, message)) return null;
+
+    const inferredSeverity = normalizedSourceIncludesError(sourceRaw)
+        ? 'error'
+        : normalizedSourceIncludesWarning(sourceRaw)
+            ? 'warning'
+            : 'info';
+    const severity = String(severityRaw || inferredSeverity).toLowerCase();
+    const normalizedSource = source.toLowerCase();
+
+    if (normalizedSource.includes('flog::output')) {
+        const cleanedMessage = message.replace(/^info:\s*/i, '').trim();
+        if (!cleanedMessage) return null;
+        return {
+            message: cleanedMessage,
+            type: classifyOutputSeverity(severity),
+            receivedAt: normalizeTimestamp(isoCandidate)
+        };
+    }
+
+    if (normalizedSource.includes('flog::warning')) {
+        const cleanedMessage = message.replace(/^warning:\s*/i, '').trim();
+        if (!cleanedMessage) return null;
+        return {
+            message: cleanedMessage,
+            type: 'MessageWarning',
+            receivedAt: normalizeTimestamp(isoCandidate)
+        };
+    }
+
+    if (severity !== 'error' && severity !== 'critical') {
+        return null;
+    }
+
+    if (
+        !normalizedSource.includes('flog::error')
+        && !normalizedSource.includes('loggroup')
+        && !normalizedSource.includes('scriptcontext')
+    ) {
+        return null;
+    }
+
+    return {
+        message: message.replace(/^Error:\s*/i, '').trim(),
+        type: 'MessageError',
+        receivedAt: normalizeTimestamp(isoCandidate)
+    };
+}
+
 function parseLogLinesFromChunk(rawChunk, readState) {
     const combined = `${readState.residual}${rawChunk}`;
     const lines = combined.split(/\r?\n/);
     readState.residual = lines.pop() || '';
 
-    const parsedEntries = [];
-    lines.forEach((line) => {
-        const trimmed = line.trim();
-        if (!trimmed) return;
-        try {
-            const payload = JSON.parse(trimmed);
-            parsedEntries.push({
-                message: payload && payload.message ? String(payload.message) : '',
-                type: payload && payload.type ? String(payload.type) : 'MessageInfo',
-                receivedAt: payload && payload.time ? String(payload.time) : new Date().toISOString()
-            });
-        } catch (error) {
-            parsedEntries.push({
-                message: trimmed,
-                type: 'MessageInfo',
-                receivedAt: new Date().toISOString()
-            });
-        }
-    });
-
-    return parsedEntries;
+    return lines
+        .map((line) => parseRobloxLogLine(line))
+        .filter(Boolean);
 }
 
-function pollWorkspaceLogFile() {
+function pollRobloxLogFile() {
     if (!loggingEnabled || !consentAccepted) return;
 
-    const executor = normalizeExecutor(selectedExecutor);
-    const readState = logReadStateByExecutor[executor];
-    if (!readState || !readState.filePath) return;
-    if (!fs.existsSync(readState.filePath)) return;
+    const activeResult = ensureActiveLogFile();
+    if (!activeResult.success || !activeLogState.filePath) return;
+    if (!fs.existsSync(activeLogState.filePath)) {
+        resetActiveLogState();
+        return;
+    }
 
     try {
-        const stats = fs.statSync(readState.filePath);
-        if (stats.size < readState.offset) {
-            readState.offset = 0;
-            readState.residual = '';
+        const stats = fs.statSync(activeLogState.filePath);
+        if (stats.size < activeLogState.offset) {
+            activeLogState.offset = 0;
+            activeLogState.residual = '';
         }
 
-        if (stats.size <= readState.offset) return;
+        if (stats.size <= activeLogState.offset) return;
 
-        const bytesRemaining = stats.size - readState.offset;
+        const bytesRemaining = stats.size - activeLogState.offset;
         const bytesToRead = Math.min(bytesRemaining, MAX_READ_CHUNK_BYTES);
         const buffer = Buffer.allocUnsafe(bytesToRead);
-        const fd = fs.openSync(readState.filePath, 'r');
+        const fd = fs.openSync(activeLogState.filePath, 'r');
 
         try {
-            fs.readSync(fd, buffer, 0, bytesToRead, readState.offset);
+            fs.readSync(fd, buffer, 0, bytesToRead, activeLogState.offset);
         } finally {
             fs.closeSync(fd);
         }
 
-        readState.offset += bytesToRead;
-        const parsedEntries = parseLogLinesFromChunk(buffer.toString('utf8'), readState);
+        activeLogState.offset += bytesToRead;
+        const parsedEntries = parseLogLinesFromChunk(buffer.toString('utf8'), activeLogState);
         pushLogs(parsedEntries);
     } catch (error) {
-        console.error('Failed to poll workspace log file:', error.message);
+        console.error('Failed to poll Roblox log file:', error.message);
     }
 }
 
 function startLogPolling() {
     if (logPollInterval) return;
-    logPollInterval = setInterval(pollWorkspaceLogFile, LOG_POLL_INTERVAL_MS);
+    logPollInterval = setInterval(pollRobloxLogFile, LOG_POLL_INTERVAL_MS);
 }
 
 function stopLogPolling() {
@@ -357,76 +366,30 @@ function stopLogPolling() {
     logPollInterval = null;
 }
 
-async function ensureConsoleScript() {
-    const paths = getAllAutoexecutePaths();
-
+async function applyLoggingState() {
     if (!loggingEnabled || !consentAccepted) {
-        deleteConsoleScriptFile(path.join(paths.hydrogen, SCRIPT_FILE_NAME));
-        deleteConsoleScriptFile(path.join(paths.macsploit, SCRIPT_FILE_NAME));
-        if (logReadStateByExecutor.hydrogen.filePath) {
-            safeUnlink(logReadStateByExecutor.hydrogen.filePath);
-        }
-        if (logReadStateByExecutor.macsploit.filePath) {
-            safeUnlink(logReadStateByExecutor.macsploit.filePath);
-        }
-        logReadStateByExecutor.hydrogen = { filePath: null, offset: 0, residual: '' };
-        logReadStateByExecutor.macsploit = { filePath: null, offset: 0, residual: '' };
+        resetActiveLogState();
         return {
             success: true,
             scriptActive: false
         };
     }
 
-    const activePath = getAutoexecutePath(selectedExecutor);
-    const inactivePath = getAutoexecutePath(selectedExecutor === 'hydrogen' ? 'macsploit' : 'hydrogen');
-    const activeLabel = selectedExecutor === 'hydrogen' ? 'Hydrogen' : 'MacSploit';
-    const activeWorkspacePath = getWorkspacePath(selectedExecutor);
-
-    if (!fs.existsSync(activePath)) {
+    const result = ensureActiveLogFile();
+    if (!result.success) {
         return {
             success: false,
             scriptActive: false,
-            error: `Autoexecute folder doesn't exist for ${activeLabel}.`
+            error: result.error
         };
     }
 
-    if (!fs.existsSync(activeWorkspacePath)) {
-        return {
-            success: false,
-            scriptActive: false,
-            error: `${activeLabel} workspace folder doesn't exist.`
-        };
-    }
-
-    try {
-        const logFileName = getLogFileName(selectedExecutor);
-        const scriptPath = path.join(activePath, SCRIPT_FILE_NAME);
-        const logFilePath = path.join(activeWorkspacePath, logFileName);
-        const scriptContent = buildConsoleCollectorScript(logFileName);
-
-        fs.writeFileSync(scriptPath, scriptContent, 'utf8');
-        fs.writeFileSync(logFilePath, '', 'utf8');
-        deleteConsoleScriptFile(path.join(inactivePath, SCRIPT_FILE_NAME));
-
-        logReadStateByExecutor[selectedExecutor] = {
-            filePath: logFilePath,
-            offset: 0,
-            residual: ''
-        };
-
-        return {
-            success: true,
-            scriptActive: true,
-            scriptPath,
-            logFilePath
-        };
-    } catch (error) {
-        return {
-            success: false,
-            scriptActive: false,
-            error: error.message
-        };
-    }
+    return {
+        success: true,
+        scriptActive: true,
+        filePath: activeLogState.filePath,
+        fileName: activeLogState.fileName
+    };
 }
 
 function registerIpcHandlers() {
@@ -435,12 +398,14 @@ function registerIpcHandlers() {
         consentAccepted = Boolean(config.accepted);
         selectedExecutor = normalizeExecutor(config.executor);
 
-        const syncResult = await ensureConsoleScript();
+        const syncResult = await applyLoggingState();
         return {
             success: syncResult.success,
             error: syncResult.error || null,
             scriptActive: Boolean(syncResult.scriptActive),
-            selectedExecutor
+            selectedExecutor,
+            filePath: syncResult.filePath || null,
+            fileName: syncResult.fileName || null
         };
     });
 
@@ -455,18 +420,15 @@ function registerIpcHandlers() {
         };
     });
 
-    ipcMain.handle('console-open-autoexec-path', async (event, executor) => {
-        const selected = normalizeExecutor(executor);
-        const targetPath = getAutoexecutePath(selected);
-
-        if (!fs.existsSync(targetPath)) {
+    ipcMain.handle('console-open-logs-path', async () => {
+        if (!fs.existsSync(ROBLOX_LOGS_DIR)) {
             return {
                 success: false,
-                error: "Autoexecute folder doesn't exist for the selected executor."
+                error: "Roblox logs folder doesn't exist."
             };
         }
 
-        const openError = await shell.openPath(targetPath);
+        const openError = await shell.openPath(ROBLOX_LOGS_DIR);
         if (openError) {
             return {
                 success: false,
@@ -476,25 +438,13 @@ function registerIpcHandlers() {
 
         return {
             success: true,
-            path: targetPath
+            path: ROBLOX_LOGS_DIR
         };
     });
 
     ipcMain.handle('console-clear-logs', () => {
         logs = [];
-
-        const executor = normalizeExecutor(selectedExecutor);
-        const state = logReadStateByExecutor[executor];
-        if (state && state.filePath) {
-            try {
-                fs.writeFileSync(state.filePath, '', 'utf8');
-                state.offset = 0;
-                state.residual = '';
-            } catch (error) {
-                console.error('Failed to clear workspace console file:', error.message);
-            }
-        }
-
+        nextLogSeq = 1;
         return { success: true };
     });
 }
@@ -506,16 +456,8 @@ function initialize(window) {
 }
 
 function shutdown() {
-    const paths = getAllAutoexecutePaths();
-    deleteConsoleScriptFile(path.join(paths.hydrogen, SCRIPT_FILE_NAME));
-    deleteConsoleScriptFile(path.join(paths.macsploit, SCRIPT_FILE_NAME));
-
-    const hydrogenLog = logReadStateByExecutor.hydrogen && logReadStateByExecutor.hydrogen.filePath;
-    const macsploitLog = logReadStateByExecutor.macsploit && logReadStateByExecutor.macsploit.filePath;
-    if (hydrogenLog) safeUnlink(hydrogenLog);
-    if (macsploitLog) safeUnlink(macsploitLog);
-
     stopLogPolling();
+    resetActiveLogState();
     mainWindow = null;
 }
 

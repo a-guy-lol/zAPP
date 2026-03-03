@@ -248,9 +248,9 @@
                             <button id="console-clear-btn" class="console-clear-btn" type="button">Clear</button>
                         </div>
                         <div id="console-consent-banner" class="console-consent-banner hidden">
-                            <p>To use Roblox console in this app, you must accept that a lua file will be added into the autoexecute folder of your selected executor (MacSploit or Hydrogen). This script sends Roblox console information to the app so it can display it here.</p>
+                            <p>To use Roblox console in this app, you must accept that Zyron will read the latest Roblox macOS player log from your device and filter it down to useful prints, warnings, and errors.</p>
                             <div class="console-consent-actions">
-                                <button id="console-show-path-btn" class="btn btn-secondary">Show Path</button>
+                                <button id="console-show-path-btn" class="btn btn-secondary">Show Logs Folder</button>
                                 <button id="console-accept-btn" class="btn">Accept</button>
                             </div>
                         </div>
@@ -494,12 +494,16 @@
                 <div id="connection-status">
                     <div class="connection-item executor-selector" id="executor-selector">
                         <button id="executor-selector-btn" class="executor-selector-btn" type="button" aria-expanded="false">
-                            <img id="executor-selected-icon" src="assets/images/Hydrogen.png" class="connection-icon" alt="Hydrogen">
-                            <span id="executor-selected-label">Hydrogen</span>
+                            <img id="executor-selected-icon" src="assets/images/loop.png" class="connection-icon" alt="Auto">
+                            <span id="executor-selected-label">Auto</span>
                             <span class="executor-caret" aria-hidden="true"></span>
                         </button>
                         <div id="executor-selector-menu" class="executor-selector-menu hidden">
-                            <button class="executor-option active" type="button" data-executor="hydrogen">
+                            <button class="executor-option active" type="button" data-executor="auto">
+                                <img src="assets/images/loop.png" class="connection-icon" alt="Auto">
+                                <span>Auto</span>
+                            </button>
+                            <button class="executor-option" type="button" data-executor="hydrogen">
                                 <img src="assets/images/Hydrogen.png" class="connection-icon" alt="Hydrogen">
                                 <span>Hydrogen</span>
                             </button>

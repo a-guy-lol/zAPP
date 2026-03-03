@@ -4,7 +4,9 @@ const discordRPC = require('./discord-rpc');
 const macsploitAPI = require('./macsploit-api');
 
 let isExecutorConnected = false;
-let selectedExecutor = 'hydrogen';
+let selectedExecutor = 'auto';
+let lastResolvedAutoExecutor = 'hydrogen';
+let resolvedExecutor = null;
 
 async function checkHydrogenConnection() {
   const START_PORT = 6969;
@@ -25,14 +27,69 @@ async function checkHydrogenConnection() {
 }
 
 function normalizeExecutor(executor) {
-  return executor === 'macsploit' ? 'macsploit' : 'hydrogen';
+  if (executor === 'hydrogen') return 'hydrogen';
+  if (executor === 'macsploit') return 'macsploit';
+  return 'auto';
+}
+
+async function resolveAutoExecutor() {
+  const checks = await Promise.all([
+    checkHydrogenConnection(),
+    macsploitAPI.checkMacsploitConnection()
+  ]);
+  const [hydrogenConnected, macsploitConnected] = checks;
+
+  if (hydrogenConnected && macsploitConnected) {
+    return {
+      connected: true,
+      executor: lastResolvedAutoExecutor === 'macsploit' ? 'macsploit' : 'hydrogen'
+    };
+  }
+
+  if (hydrogenConnected) {
+    lastResolvedAutoExecutor = 'hydrogen';
+    return { connected: true, executor: 'hydrogen' };
+  }
+
+  if (macsploitConnected) {
+    lastResolvedAutoExecutor = 'macsploit';
+    return { connected: true, executor: 'macsploit' };
+  }
+
+  return { connected: false, executor: null };
+}
+
+async function getExecutorRuntimeStatus() {
+  const normalizedSelectedExecutor = normalizeExecutor(selectedExecutor);
+
+  if (normalizedSelectedExecutor === 'auto') {
+    const autoResult = await resolveAutoExecutor();
+    resolvedExecutor = autoResult.connected ? autoResult.executor : null;
+    return {
+      connected: autoResult.connected,
+      selectedExecutor: normalizedSelectedExecutor,
+      resolvedExecutor
+    };
+  }
+
+  const connected = normalizedSelectedExecutor === 'macsploit'
+    ? await macsploitAPI.checkMacsploitConnection()
+    : await checkHydrogenConnection();
+
+  resolvedExecutor = connected ? normalizedSelectedExecutor : null;
+  return {
+    connected,
+    selectedExecutor: normalizedSelectedExecutor,
+    resolvedExecutor
+  };
 }
 
 async function checkSelectedExecutorConnection() {
-  if (selectedExecutor === 'macsploit') {
-    return macsploitAPI.checkMacsploitConnection();
+  const status = await getExecutorRuntimeStatus();
+  if (status.connected && status.resolvedExecutor) {
+    lastResolvedAutoExecutor = status.resolvedExecutor;
   }
-  return checkHydrogenConnection();
+  return status.connected;
 }
 
 async function executeThroughHydrogen(scriptContent) {
@@ -77,6 +134,17 @@ async function executeThroughHydrogen(scriptContent) {
 async function executeScript(scriptContent) {
   discordRPC.updateActivity({ details: 'Executing a script' });
   try {
+    if (selectedExecutor === 'auto') {
+      const resolved = await resolveAutoExecutor();
+      if (!resolved.connected || !resolved.executor) {
+        return { success: false, message: 'Could not connect to Hydrogen or MacSploit. Try restarting your executor or Roblox.' };
+      }
+      lastResolvedAutoExecutor = resolved.executor;
+      if (resolved.executor === 'macsploit') {
+        return await macsploitAPI.executeScript(scriptContent);
+      }
+      return await executeThroughHydrogen(scriptContent);
+    }
     if (selectedExecutor === 'macsploit') {
       return await macsploitAPI.executeScript(scriptContent);
     }
@@ -91,14 +159,19 @@ ipcMain.handle('execute-script', async (event, scriptContent) => {
 });
 
 ipcMain.handle('check-connection', async () => {
-  const connectedNow = await checkSelectedExecutorConnection();
+  const status = await getExecutorRuntimeStatus();
+  const connectedNow = status.connected;
 
   if (connectedNow !== isExecutorConnected) {
       isExecutorConnected = connectedNow;
       discordRPC.updateConnectionStatus(connectedNow);
   }
 
-  return connectedNow;
+  if (connectedNow && status.resolvedExecutor) {
+      lastResolvedAutoExecutor = status.resolvedExecutor;
+  }
+
+  return status;
 });
 
 ipcMain.handle('set-selected-executor', async (event, executor) => {
@@ -113,6 +186,10 @@ ipcMain.handle('set-selected-executor', async (event, executor) => {
 
 ipcMain.handle('get-selected-executor', () => {
   return selectedExecutor;
+});
+
+ipcMain.handle('get-executor-runtime-status', async () => {
+  return getExecutorRuntimeStatus();
 });
 
 function initialize() {

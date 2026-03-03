@@ -1,6 +1,14 @@
 {
-  "latestVersion": "1.5.0",
+  "latestVersion": "1.5.1",
   "changelogs": [
+{
+  "version": "1.5.1",
+  "date": "2026-03-03",
+  "changes": [
+    "Added a new Auto executor option (auto connects to Hydrogen or MacSploit)",
+    "Redesigned RBX Console Logging (Doesn't use autoexecute and uses Roblox system logs from /Library/Logs)"
+  ]
+},
 {
   "version": "1.5.0",
   "date": "2026-02-22",

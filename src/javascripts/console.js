@@ -44,12 +44,17 @@ function clearConsolePlaceholder() {
 
 function appendConsoleLine(entry) {
     const level = normalizeConsoleLevel(entry.type);
+    const levelLabel = level === 'error'
+        ? 'Error'
+        : level === 'warn'
+            ? 'Warning'
+            : 'Message';
 
     const line = document.createElement('div');
     line.className = `console-line ${level}`;
     line.innerHTML = `
         <span class="console-time">${formatConsoleTime(entry.receivedAt)}</span>
-        <span class="console-level ${level}">${String(entry.type || 'INFO').toUpperCase()}</span>
+        <span class="console-level ${level}">${levelLabel}</span>
         <span class="console-message"></span>
     `;
     line.querySelector('.console-message').textContent = String(entry.message || '');
@@ -187,12 +192,12 @@ async function onExecutorSelectionChanged() {
 
 async function handleConsoleShowPath() {
     try {
-        const result = await window.electronAPI.consoleOpenAutoexecPath(selectedExecutor);
+        const result = await window.electronAPI.consoleOpenLogsPath();
         if (!result.success) {
-            showNotification(result.error || "Autoexecute folder doesn't exist for the selected executor.", 'error');
+            showNotification(result.error || "Roblox logs folder doesn't exist.", 'error');
         }
     } catch (error) {
-        showNotification(`Failed to open autoexecute path: ${error.message}`, 'error');
+        showNotification(`Failed to open Roblox logs folder: ${error.message}`, 'error');
     }
 }
 
