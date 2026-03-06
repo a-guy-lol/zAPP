@@ -45,6 +45,10 @@
     .autoexecute-manager-btn span {
         display: none;
     }
+
+    .executor-install-btn span {
+        display: none;
+    }
     
     #script-cards-container {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -90,6 +94,22 @@
         width: min(300px, calc(100vw - 20px));
         left: 10px !important;
         right: 10px;
+    }
+
+    .executor-install-menu {
+        width: min(95vw, calc(100vw - 16px));
+        right: -4px;
+    }
+
+    .executor-install-entry-controls {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .executor-install-copy-btn,
+    .executor-install-run-btn,
+    .executor-install-delete-btn {
+        width: 100%;
+        min-height: 34px;
     }
 }
 

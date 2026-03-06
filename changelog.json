@@ -1,6 +1,15 @@
 {
-  "latestVersion": "1.5.1",
+  "latestVersion": "1.5.2",
   "changelogs": [
+{
+  "version": "1.5.2",
+  "date": "2026-03-06",
+  "changes": [
+    "Added Opiumware support as the third executor",
+    "Fixed Zexon Script not working and now works for MM2!",
+    "New install button to manage Hydrogen, MacSploit, Opiumware in Zyron!"
+  ]
+},
 {
   "version": "1.5.1",
   "date": "2026-03-03",

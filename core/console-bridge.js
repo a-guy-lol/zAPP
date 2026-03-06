@@ -100,6 +100,7 @@ let activeLogState = {
 function normalizeExecutor(executor) {
     if (executor === 'hydrogen') return 'hydrogen';
     if (executor === 'macsploit') return 'macsploit';
+    if (executor === 'opiumware') return 'opiumware';
     return 'auto';
 }
 

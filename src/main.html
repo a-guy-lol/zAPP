@@ -475,7 +475,7 @@
                         <div class="about-description-card">
                             <h3>About Zyron</h3>
                             <p>Zexon Development is a private organization, branded as Zexon, that has created projects like Zyron, Zexon Script, and other Roblox Projects. Zexon and Zyron do not collect any data whatsoever. It only connects to your selected executor and stores data on your device.</p>
-                            <p>Zyron is a custom UI layer for Roblox executors. Zyron is not an executor itself; it connects to Hydrogen or MacSploit so you can execute scripts with a cleaner interface.</p>
+                            <p>Zyron is a custom UI layer for Roblox executors. Zyron is not an executor itself; it connects to Hydrogen, MacSploit, or Opiumware so you can execute scripts with a cleaner interface.</p>
                         </div>
                         
                         <div class="changelog-section">
@@ -511,6 +511,10 @@
                                 <img src="assets/images/MacSploit.png" class="connection-icon" alt="MacSploit">
                                 <span>MacSploit</span>
                             </button>
+                            <button class="executor-option" type="button" data-executor="opiumware">
+                                <img src="assets/images/opiumware.png" class="connection-icon" alt="Opiumware">
+                                <span>Opiumware</span>
+                            </button>
                         </div>
                         <div id="executor-status-indicator" class="status-indicator disconnected"></div>
                     </div>
@@ -519,11 +523,70 @@
                     </div>
                 </div>
                 <div id="bottom-bar-actions">
+                    <div id="executor-install-control" class="executor-install-control">
+                        <button id="executor-install-btn" class="executor-install-btn" type="button" aria-expanded="false" title="Install Executors">
+                            <img src="assets/images/download.png" alt="" class="executor-install-btn-icon">
+                            <span>Install</span>
+                        </button>
+                        <div id="executor-install-menu" class="executor-install-menu hidden">
+                            <div class="executor-install-entry" data-executor-install="macsploit">
+                                <div class="executor-install-entry-head">
+                                    <div class="executor-install-entry-title-wrap">
+                                        <img src="assets/images/MacSploit.png" class="executor-install-entry-icon" alt="MacSploit">
+                                        <span class="executor-install-entry-title">MacSploit</span>
+                                    </div>
+                                    <span class="executor-install-entry-status" data-install-status="macsploit">Missing</span>
+                                </div>
+                                <div class="executor-install-entry-controls">
+                                    <textarea id="install-command-macsploit" class="executor-install-command" readonly spellcheck="false">cd ~/ && curl -s "https://git.abyssdigital.xyz/main/install.sh" | bash </dev/tty</textarea>
+                                    <button class="executor-install-copy-btn" type="button" data-copy-target="install-command-macsploit" title="Copy command">
+                                        <img src="assets/images/copy.png" alt="">
+                                    </button>
+                                    <button class="executor-install-run-btn" type="button" data-install-executor="macsploit">Install</button>
+                                    <button class="executor-install-delete-btn" type="button" data-delete-executor="macsploit">Delete</button>
+                                </div>
+                            </div>
+                            <div class="executor-install-entry" data-executor-install="hydrogen">
+                                <div class="executor-install-entry-head">
+                                    <div class="executor-install-entry-title-wrap">
+                                        <img src="assets/images/Hydrogen.png" class="executor-install-entry-icon" alt="Hydrogen">
+                                        <span class="executor-install-entry-title">Hydrogen</span>
+                                    </div>
+                                    <span class="executor-install-entry-status" data-install-status="hydrogen">Missing</span>
+                                </div>
+                                <div class="executor-install-entry-controls">
+                                    <textarea id="install-command-hydrogen" class="executor-install-command" readonly spellcheck="false">bash -c "$(curl -fsSL https://www.hydrogen.lat/install)"</textarea>
+                                    <button class="executor-install-copy-btn" type="button" data-copy-target="install-command-hydrogen" title="Copy command">
+                                        <img src="assets/images/copy.png" alt="">
+                                    </button>
+                                    <button class="executor-install-run-btn" type="button" data-install-executor="hydrogen">Install</button>
+                                    <button class="executor-install-delete-btn" type="button" data-delete-executor="hydrogen">Delete</button>
+                                </div>
+                            </div>
+                            <div class="executor-install-entry" data-executor-install="opiumware">
+                                <div class="executor-install-entry-head">
+                                    <div class="executor-install-entry-title-wrap">
+                                        <img src="assets/images/opiumware.png" class="executor-install-entry-icon" alt="Opiumware">
+                                        <span class="executor-install-entry-title">Opiumware</span>
+                                    </div>
+                                    <span class="executor-install-entry-status" data-install-status="opiumware">Missing</span>
+                                </div>
+                                <div class="executor-install-entry-controls">
+                                    <textarea id="install-command-opiumware" class="executor-install-command" readonly spellcheck="false">bash <(curl -fsSL "https://raw.githubusercontent.com/norbyv1/OpiumwareInstall/main/inst")</textarea>
+                                    <button class="executor-install-copy-btn" type="button" data-copy-target="install-command-opiumware" title="Copy command">
+                                        <img src="assets/images/copy.png" alt="">
+                                    </button>
+                                    <button class="executor-install-run-btn" type="button" data-install-executor="opiumware">Install</button>
+                                    <button class="executor-install-delete-btn" type="button" data-delete-executor="opiumware">Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="execute-btn" disabled>Execute</button>
                     <button id="kill-switch-btn" class="kill-switch-btn" type="button" aria-pressed="false">
                         <img src="assets/images/power.png" alt="" class="kill-switch-icon">
                         <span>Kill Switch</span>
                     </button>
-                    <button id="execute-btn" disabled>Execute</button>
                 </div>
             </div>
                 </div>

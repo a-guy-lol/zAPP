@@ -3,11 +3,12 @@ const os = require('os');
 const path = require('path');
 const { ipcMain } = require('electron');
 
-const EXECUTORS = ['hydrogen', 'macsploit'];
+const EXECUTORS = ['hydrogen', 'macsploit', 'opiumware'];
 
 function normalizeExecutor(executor) {
     if (executor === 'hydrogen') return 'hydrogen';
     if (executor === 'macsploit') return 'macsploit';
+    if (executor === 'opiumware') return 'opiumware';
     return 'auto';
 }
 
@@ -20,6 +21,9 @@ function getAutoexecutePath(executor) {
     const normalized = normalizeExecutor(executor);
     if (normalized === 'macsploit') {
         return path.join(os.homedir(), 'Documents', 'Macsploit Automatic Execution');
+    }
+    if (normalized === 'opiumware') {
+        return path.join(os.homedir(), 'Opiumware', 'autoexec');
     }
     return path.join(os.homedir(), 'Hydrogen', 'autoexecute');
 }
@@ -78,7 +82,7 @@ function syncAutoexecuteScripts(payload = {}) {
         return {
             success: false,
             error: selectedExecutor === 'auto'
-                ? "Autoexecute folder doesn't exist for Hydrogen or MacSploit."
+                ? "Autoexecute folder doesn't exist for Hydrogen, MacSploit, or Opiumware."
                 : "Autoexecute folder doesn't exist for the selected executor."
         };
     }

@@ -316,23 +316,30 @@ li.CodeMirror-hint-active {
     color: #9fbac4;
 }
 
-.kill-switch-btn {
+.kill-switch-btn,
+.executor-install-btn {
     border: 1px solid rgba(173, 185, 200, 0.3);
     background: rgba(159, 172, 189, 0.12);
     color: var(--text-main);
     border-radius: 9px;
-    padding: 9px 12px;
+    height: 38px;
+    min-width: 106px;
+    padding: 0 12px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 7px;
     font-size: 12px;
     font-weight: 600;
+    line-height: 1;
     cursor: pointer;
     transition: border-color 0.18s ease, background-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
-.kill-switch-btn:hover:not(:disabled) {
+.kill-switch-btn:hover:not(:disabled),
+.executor-install-btn:hover {
     border-color: rgba(207, 218, 232, 0.44);
     background: rgba(182, 196, 212, 0.2);
     transform: translateY(-1px);
@@ -355,6 +362,185 @@ li.CodeMirror-hint-active {
     height: 14px;
     object-fit: contain;
     opacity: 0.88;
+}
+
+.executor-install-control {
+    position: relative;
+    display: flex;
+}
+
+.executor-install-btn.missing-required {
+    border-color: rgba(193, 70, 70, 0.86);
+    box-shadow: 0 0 0 1px rgba(193, 70, 70, 0.34), 0 8px 16px rgba(121, 25, 25, 0.35);
+}
+
+.executor-install-btn-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    opacity: 0.9;
+}
+
+.executor-install-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 10px);
+    width: min(560px, calc(100vw - 40px));
+    max-height: min(70vh, 460px);
+    overflow: auto;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background: rgba(12, 12, 12, 0.95);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 22px 36px rgba(0, 0, 0, 0.45);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 90;
+}
+
+.executor-install-entry {
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.executor-install-entry-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.executor-install-entry-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.executor-install-entry-icon {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.executor-install-entry-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.executor-install-entry-status {
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    padding: 3px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.executor-install-entry-status.installed {
+    color: #9de5b6;
+    border-color: rgba(124, 233, 158, 0.45);
+    background: rgba(54, 121, 72, 0.28);
+}
+
+.executor-install-entry-status.missing {
+    color: #f0b3b3;
+    border-color: rgba(193, 70, 70, 0.55);
+    background: rgba(121, 30, 30, 0.33);
+}
+
+.executor-install-entry-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 7px;
+    align-items: stretch;
+}
+
+.executor-install-command {
+    resize: none;
+    min-height: 52px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.34);
+    color: #d8e0eb;
+    font-size: 11px;
+    line-height: 1.25;
+    padding: 8px 10px;
+    margin: 0;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    font-family: "SF Mono", "Menlo", "Consolas", monospace;
+}
+
+.executor-install-copy-btn {
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    width: 36px;
+    min-width: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.16s ease, border-color 0.16s ease;
+}
+
+.executor-install-copy-btn:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.executor-install-copy-btn img {
+    width: 15px;
+    height: 15px;
+    object-fit: contain;
+    opacity: 0.88;
+}
+
+.executor-install-run-btn {
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.11);
+    color: #f0f4f9;
+    padding: 0 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.executor-install-run-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.55);
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.executor-install-delete-btn {
+    border: 1px solid rgba(194, 94, 94, 0.55);
+    border-radius: 8px;
+    background: rgba(122, 38, 38, 0.36);
+    color: #f5d6d6;
+    padding: 0 12px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease;
+}
+
+.executor-install-delete-btn:hover {
+    transform: translateY(-1px);
+    border-color: rgba(228, 122, 122, 0.72);
+    background: rgba(143, 44, 44, 0.5);
 }
 
 #execute-btn {

@@ -55,6 +55,12 @@ let latestChangelogVersion = null;
 let isDevelopmentBuild = false;
 let appDataFileSizeBytes = 0;
 let killSwitchTransitionInFlight = false;
+let executorInstallStatus = {
+    hydrogen: false,
+    macsploit: false,
+    opiumware: false
+};
+let executorInstallStatusInFlight = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(initApp, 100);
@@ -289,6 +295,8 @@ async function initApp() {
 
     initializeSettingsTabs();
     setupExecutorSelector();
+    setupExecutorInstallMenu();
+    await refreshExecutorInstallStatus({ silent: true });
     initializeWorkspacePanel();
     setupSidePanel();
 
@@ -340,8 +348,13 @@ function compareVersions(versionA, versionB) {
 }
 
 function getExecutorLabel(executor = selectedExecutor) {
-    if (executor === 'auto') return 'Auto';
-    return executor === 'macsploit' ? 'MacSploit' : 'Hydrogen';
+    const labelByExecutor = {
+        auto: 'Auto',
+        hydrogen: 'Hydrogen',
+        macsploit: 'MacSploit',
+        opiumware: 'Opiumware'
+    };
+    return labelByExecutor[normalizeExecutor(executor)] || 'Auto';
 }
 
 function formatDataSize(bytesValue) {
@@ -592,6 +605,7 @@ window.persistUsername = persistUsername;
 function normalizeExecutor(executor) {
     if (executor === 'hydrogen') return 'hydrogen';
     if (executor === 'macsploit') return 'macsploit';
+    if (executor === 'opiumware') return 'opiumware';
     return 'auto';
 }
 
@@ -599,12 +613,14 @@ function updateExecutorSelectorUI(resolvedExecutor = null) {
     const iconByExecutor = {
         auto: 'assets/images/loop.png',
         hydrogen: 'assets/images/Hydrogen.png',
-        macsploit: 'assets/images/MacSploit.png'
+        macsploit: 'assets/images/MacSploit.png',
+        opiumware: 'assets/images/opiumware.png'
     };
     const labelByExecutor = {
         auto: 'Auto',
         hydrogen: 'Hydrogen',
-        macsploit: 'MacSploit'
+        macsploit: 'MacSploit',
+        opiumware: 'Opiumware'
     };
 
     const displayExecutor = selectedExecutor === 'auto' && resolvedExecutor && resolvedExecutor !== 'auto'
@@ -627,6 +643,7 @@ async function setSelectedExecutor(executor, { persist = true, notify = false } 
     const normalizedExecutor = normalizeExecutor(executor);
     selectedExecutor = normalizedExecutor;
     updateExecutorSelectorUI();
+    updateExecutorInstallButtonUI();
 
     try {
         await window.electronAPI.setSelectedExecutor(normalizedExecutor);
@@ -669,7 +686,7 @@ function setupExecutorSelector() {
             event.stopPropagation();
             executorSelectorMenu.classList.add('hidden');
             executorSelectorBtn.setAttribute('aria-expanded', 'false');
-            await setSelectedExecutor(option.dataset.executor, { persist: true, notify: true });
+            await setSelectedExecutor(option.dataset.executor, { persist: true, notify: false });
         });
     });
 
@@ -677,6 +694,225 @@ function setupExecutorSelector() {
         if (!executorSelector.contains(event.target)) {
             executorSelectorMenu.classList.add('hidden');
             executorSelectorBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+}
+
+function normalizeExecutorInstallStatus(rawStatus) {
+    const source = rawStatus && typeof rawStatus === 'object' ? rawStatus : {};
+    return {
+        hydrogen: Boolean(source.hydrogen),
+        macsploit: Boolean(source.macsploit),
+        opiumware: Boolean(source.opiumware)
+    };
+}
+
+function isInstallMissingForCurrentExecutor() {
+    if (selectedExecutor === 'auto') {
+        return Object.values(executorInstallStatus).some((isInstalled) => !isInstalled);
+    }
+    const normalized = normalizeExecutor(selectedExecutor);
+    if (normalized === 'auto') return false;
+    return !Boolean(executorInstallStatus[normalized]);
+}
+
+function updateExecutorInstallButtonUI() {
+    if (!executorInstallBtn) return;
+    const missingRequired = isInstallMissingForCurrentExecutor();
+    executorInstallBtn.classList.toggle('missing-required', missingRequired);
+    executorInstallBtn.title = missingRequired
+        ? 'One or more required executors are not installed'
+        : 'Install Executors';
+}
+
+function updateExecutorInstallMenuUI() {
+    executorInstallStatusBadges.forEach((badge) => {
+        const executor = badge.dataset.installStatus;
+        const installed = Boolean(executorInstallStatus[executor]);
+        badge.textContent = installed ? 'Installed' : 'Missing';
+        badge.classList.toggle('installed', installed);
+        badge.classList.toggle('missing', !installed);
+        const entry = badge.closest('.executor-install-entry');
+        if (entry) {
+            entry.classList.toggle('installed', installed);
+            entry.classList.toggle('missing', !installed);
+        }
+    });
+}
+
+async function refreshExecutorInstallStatus({ silent = true } = {}) {
+    if (!window.electronAPI || typeof window.electronAPI.getExecutorInstallStatus !== 'function') {
+        return executorInstallStatus;
+    }
+
+    if (executorInstallStatusInFlight) {
+        return executorInstallStatusInFlight;
+    }
+
+    executorInstallStatusInFlight = (async () => {
+        try {
+            const result = await window.electronAPI.getExecutorInstallStatus();
+            if (result && result.success) {
+                executorInstallStatus = normalizeExecutorInstallStatus(result.status);
+                updateExecutorInstallMenuUI();
+                updateExecutorInstallButtonUI();
+            } else if (!silent) {
+                showNotification(result?.error || 'Failed to check executor installs.', 'error');
+            }
+            return executorInstallStatus;
+        } catch (error) {
+            if (!silent) {
+                showNotification(`Failed to check executor installs: ${error.message}`, 'error');
+            }
+            return executorInstallStatus;
+        } finally {
+            executorInstallStatusInFlight = null;
+        }
+    })();
+
+    return executorInstallStatusInFlight;
+}
+
+function closeExecutorInstallMenu() {
+    if (!executorInstallMenu || !executorInstallBtn) return;
+    executorInstallMenu.classList.add('hidden');
+    executorInstallBtn.setAttribute('aria-expanded', 'false');
+}
+
+async function openExecutorInstallMenu() {
+    if (!executorInstallMenu || !executorInstallBtn) return;
+    await refreshExecutorInstallStatus({ silent: true });
+    executorInstallMenu.classList.remove('hidden');
+    executorInstallBtn.setAttribute('aria-expanded', 'true');
+}
+
+async function handleExecutorInstallRun(executor) {
+    const normalized = normalizeExecutor(executor);
+    if (normalized === 'auto') return;
+    if (!window.electronAPI || typeof window.electronAPI.installExecutor !== 'function') {
+        showNotification('Install bridge unavailable.', 'error');
+        return;
+    }
+
+    try {
+        const result = await window.electronAPI.installExecutor(normalized);
+        if (!result || !result.success) {
+            showNotification(result?.error || 'Failed to launch installer command.', 'error');
+            return;
+        }
+        showNotification(`Installer launched for ${getExecutorLabel(normalized)} in Terminal.`, 'info');
+        setTimeout(() => {
+            refreshExecutorInstallStatus({ silent: true });
+        }, 3000);
+    } catch (error) {
+        showNotification(`Failed to launch installer: ${error.message}`, 'error');
+    }
+}
+
+function getExecutorBundleName(executor) {
+    const normalized = normalizeExecutor(executor);
+    if (normalized === 'hydrogen') return 'Hydrogen.app';
+    if (normalized === 'macsploit') return 'MacSploit.app';
+    if (normalized === 'opiumware') return 'Opiumware.app';
+    return 'Executor.app';
+}
+
+async function handleExecutorUninstall(executor) {
+    const normalized = normalizeExecutor(executor);
+    if (normalized === 'auto') return;
+    if (!window.electronAPI || typeof window.electronAPI.uninstallExecutor !== 'function') {
+        showNotification('Delete bridge unavailable.', 'error');
+        return;
+    }
+
+    try {
+        const result = await window.electronAPI.uninstallExecutor(normalized);
+        if (!result || !result.success) {
+            showNotification(result?.error || 'Failed to delete app bundle.', 'error');
+            return;
+        }
+
+        if (result.removed) {
+            showNotification(`Deleted ${getExecutorBundleName(normalized)}.`, 'info');
+        } else {
+            showNotification(`${getExecutorBundleName(normalized)} was not found.`, 'info');
+        }
+
+        await refreshExecutorInstallStatus({ silent: true });
+    } catch (error) {
+        showNotification(`Failed to delete app bundle: ${error.message}`, 'error');
+    }
+}
+
+function setupExecutorInstallMenu() {
+    if (!executorInstallBtn || !executorInstallMenu || !executorInstallControl) {
+        return;
+    }
+
+    executorInstallBtn.addEventListener('click', async (event) => {
+        event.stopPropagation();
+        const isHidden = executorInstallMenu.classList.contains('hidden');
+        if (isHidden) {
+            await openExecutorInstallMenu();
+        } else {
+            closeExecutorInstallMenu();
+        }
+    });
+
+    executorInstallCopyBtns.forEach((button) => {
+        button.addEventListener('click', async (event) => {
+            event.stopPropagation();
+            const targetId = button.dataset.copyTarget;
+            const target = targetId ? document.getElementById(targetId) : null;
+            const command = target ? String(target.value || target.textContent || '') : '';
+            if (!command.trim()) {
+                showNotification('Install command is empty.', 'error');
+                return;
+            }
+
+            const copyResult = await window.electronAPI.clipboardWriteText(command);
+            if (copyResult && copyResult.success) {
+                showNotification('Install command copied.', 'info');
+            } else {
+                showNotification(copyResult?.error || 'Failed to copy install command.', 'error');
+            }
+        });
+    });
+
+    executorInstallRunBtns.forEach((button) => {
+        button.addEventListener('click', async (event) => {
+            event.stopPropagation();
+            const executor = button.dataset.installExecutor;
+            await handleExecutorInstallRun(executor);
+        });
+    });
+
+    executorInstallDeleteBtns.forEach((button) => {
+        button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const executor = button.dataset.deleteExecutor;
+            const normalized = normalizeExecutor(executor);
+            if (normalized === 'auto') return;
+
+            const executorLabel = getExecutorLabel(normalized);
+            const bundleName = getExecutorBundleName(normalized);
+            if (typeof showConfirmationModal === 'function') {
+                showConfirmationModal(
+                    `Delete ${executorLabel}?`,
+                    `This will permanently delete /Applications/${bundleName}.`,
+                    () => {
+                        handleExecutorUninstall(normalized);
+                    }
+                );
+            } else {
+                handleExecutorUninstall(normalized);
+            }
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!executorInstallControl.contains(event.target)) {
+            closeExecutorInstallMenu();
         }
     });
 }
@@ -1233,3 +1469,5 @@ window.updateSideProfile = updateSideProfile;
 window.setKillSwitchState = setKillSwitchState;
 window.isKillSwitchEnabled = () => killSwitchEnabled;
 window.updateKillSwitchUI = updateKillSwitchUI;
+window.refreshExecutorInstallStatus = refreshExecutorInstallStatus;
+window.updateExecutorInstallButtonUI = updateExecutorInstallButtonUI;

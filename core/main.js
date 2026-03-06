@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, clipboard } = require('electron');
 const path = require('path');
 
 const autoUpdater = require('./auto-updater');
@@ -8,6 +8,7 @@ const consoleBridge = require('./console-bridge');
 const autoexecuteManager = require('./autoexecute-manager');
 const dataManager = require('./data-manager');
 const scriptHub = require('./script-hub');
+const executorInstaller = require('./executor-installer');
 
 let mainWindow;
 let isQuitting = false;
@@ -85,6 +86,15 @@ ipcMain.handle('set-window-opacity', (event, opacity) => {
   }
 });
 
+ipcMain.handle('clipboard-write-text', (event, text) => {
+  try {
+    clipboard.writeText(String(text ?? ''));
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 function initializeModules() {
   autoUpdater.initialize(mainWindow);
   discordRPC.initialize();
@@ -93,6 +103,7 @@ function initializeModules() {
   autoexecuteManager.initialize();
   dataManager.initialize();
   scriptHub.initialize();
+  executorInstaller.initialize();
 }
 
 function finalizeQuit() {

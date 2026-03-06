@@ -1,4 +1,8 @@
 async function checkConnection() {
+    if (typeof window.refreshExecutorInstallStatus === 'function') {
+        window.refreshExecutorInstallStatus({ silent: true });
+    }
+
     if (killSwitchEnabled) {
         if (robloxStatusIndicator && robloxStatusText) {
             robloxStatusIndicator.classList.remove('connected', 'disconnected');

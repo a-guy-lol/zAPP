@@ -2,6 +2,9 @@ const fetch = require('node-fetch');
 const { ipcMain } = require('electron');
 const discordRPC = require('./discord-rpc');
 const macsploitAPI = require('./macsploit-api');
+const opiumwareAPI = require('./opiumware-api');
+
+const AUTO_EXECUTOR_ORDER = ['hydrogen', 'macsploit', 'opiumware'];
 
 let isExecutorConnected = false;
 let selectedExecutor = 'auto';
@@ -29,34 +32,50 @@ async function checkHydrogenConnection() {
 function normalizeExecutor(executor) {
   if (executor === 'hydrogen') return 'hydrogen';
   if (executor === 'macsploit') return 'macsploit';
+  if (executor === 'opiumware') return 'opiumware';
   return 'auto';
 }
 
 async function resolveAutoExecutor() {
   const checks = await Promise.all([
     checkHydrogenConnection(),
-    macsploitAPI.checkMacsploitConnection()
+    macsploitAPI.checkMacsploitConnection(),
+    opiumwareAPI.checkOpiumwareConnection()
   ]);
-  const [hydrogenConnected, macsploitConnected] = checks;
+  const [hydrogenConnected, macsploitConnected, opiumwareConnected] = checks;
+  const connectedByExecutor = {
+    hydrogen: hydrogenConnected,
+    macsploit: macsploitConnected,
+    opiumware: opiumwareConnected
+  };
+  const connectedExecutors = AUTO_EXECUTOR_ORDER.filter((executor) => connectedByExecutor[executor]);
 
-  if (hydrogenConnected && macsploitConnected) {
+  if (connectedExecutors.length === 0) {
     return {
-      connected: true,
-      executor: lastResolvedAutoExecutor === 'macsploit' ? 'macsploit' : 'hydrogen'
+      connected: false,
+      executor: null
     };
   }
 
-  if (hydrogenConnected) {
-    lastResolvedAutoExecutor = 'hydrogen';
-    return { connected: true, executor: 'hydrogen' };
+  if (connectedExecutors.includes(lastResolvedAutoExecutor)) {
+    return {
+      connected: true,
+      executor: lastResolvedAutoExecutor
+    };
   }
 
-  if (macsploitConnected) {
-    lastResolvedAutoExecutor = 'macsploit';
-    return { connected: true, executor: 'macsploit' };
-  }
+  lastResolvedAutoExecutor = connectedExecutors[0];
+  return { connected: true, executor: lastResolvedAutoExecutor };
+}
 
-  return { connected: false, executor: null };
+async function checkExecutorConnection(executor) {
+  if (executor === 'macsploit') {
+    return macsploitAPI.checkMacsploitConnection();
+  }
+  if (executor === 'opiumware') {
+    return opiumwareAPI.checkOpiumwareConnection();
+  }
+  return checkHydrogenConnection();
 }
 
 async function getExecutorRuntimeStatus() {
@@ -72,9 +91,7 @@ async function getExecutorRuntimeStatus() {
     };
   }
 
-  const connected = normalizedSelectedExecutor === 'macsploit'
-    ? await macsploitAPI.checkMacsploitConnection()
-    : await checkHydrogenConnection();
+  const connected = await checkExecutorConnection(normalizedSelectedExecutor);
 
   resolvedExecutor = connected ? normalizedSelectedExecutor : null;
   return {
@@ -137,16 +154,22 @@ async function executeScript(scriptContent) {
     if (selectedExecutor === 'auto') {
       const resolved = await resolveAutoExecutor();
       if (!resolved.connected || !resolved.executor) {
-        return { success: false, message: 'Could not connect to Hydrogen or MacSploit. Try restarting your executor or Roblox.' };
+        return { success: false, message: 'Could not connect to Hydrogen, MacSploit, or Opiumware. Try restarting your executor or Roblox.' };
       }
       lastResolvedAutoExecutor = resolved.executor;
       if (resolved.executor === 'macsploit') {
         return await macsploitAPI.executeScript(scriptContent);
       }
+      if (resolved.executor === 'opiumware') {
+        return await opiumwareAPI.executeScript(scriptContent);
+      }
       return await executeThroughHydrogen(scriptContent);
     }
     if (selectedExecutor === 'macsploit') {
       return await macsploitAPI.executeScript(scriptContent);
+    }
+    if (selectedExecutor === 'opiumware') {
+      return await opiumwareAPI.executeScript(scriptContent);
     }
     return await executeThroughHydrogen(scriptContent);
   } finally {

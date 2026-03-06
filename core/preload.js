@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer, clipboard } = require('electron');
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   minimizeWindow: () => ipcRenderer.send('minimize-window'),
@@ -46,17 +46,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   scriptbloxTrending: () => ipcRenderer.invoke('scriptblox-trending'),
   scriptbloxSearch: (options) => ipcRenderer.invoke('scriptblox-search', options),
   scriptbloxGetScriptContent: (scriptIdentifier) => ipcRenderer.invoke('scriptblox-get-script-content', scriptIdentifier),
-  clipboardWriteText: (text) => {
-    try {
-      if (!clipboard || typeof clipboard.writeText !== 'function') {
-        return { success: false, error: 'Clipboard is unavailable.' };
-      }
-      clipboard.writeText(String(text ?? ''));
-      return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  },
+  clipboardWriteText: (text) => ipcRenderer.invoke('clipboard-write-text', text),
   setSelectedExecutor: (executor) => ipcRenderer.invoke('set-selected-executor', executor),
   getSelectedExecutor: () => ipcRenderer.invoke('get-selected-executor'),
   consoleSetConfig: (config) => ipcRenderer.invoke('console-set-config', config),
@@ -65,6 +55,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   consoleClearLogs: () => ipcRenderer.invoke('console-clear-logs'),
   syncAutoexecuteScripts: (payload) => ipcRenderer.invoke('sync-autoexecute-scripts', payload),
   syncScriptHubAutoexecute: (payload) => ipcRenderer.invoke('sync-script-hub-autoexecute', payload),
+  getExecutorInstallStatus: () => ipcRenderer.invoke('get-executor-install-status'),
+  installExecutor: (executor) => ipcRenderer.invoke('install-executor', executor),
+  uninstallExecutor: (executor) => ipcRenderer.invoke('uninstall-executor', executor),
   
   saveScriptSettings: (scriptRef, settings) => ipcRenderer.invoke('save-script-settings', scriptRef, settings),
   loadScriptSettings: (scriptRef) => ipcRenderer.invoke('load-script-settings', scriptRef),
