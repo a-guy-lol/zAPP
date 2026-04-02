@@ -60,7 +60,7 @@ sed -i '' "s/\"latestVersion\": \".*\"/\"latestVersion\": \"$VERSION\"/" changel
 # Commit all changes (app changes + version updates)
 echo "📦 Committing all changes for release"
 git add .
-git commit -m "Release $TAG"
+git commit --allow-empty -m "Release $TAG"
 
 # Create and push tag
 echo "🏷️  Creating and pushing tag $TAG"
