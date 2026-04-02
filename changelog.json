@@ -1,6 +1,15 @@
 {
-  "latestVersion": "1.5.2",
+  "latestVersion": "1.5.3",
   "changelogs": [
+
+{
+  "version": "1.5.3",
+  "date": "2026-04-02",
+  "changes": [
+    "Updated/Fixed Zexon Script loadstring",
+  ]
+},
+
 {
   "version": "1.5.2",
   "date": "2026-03-06",

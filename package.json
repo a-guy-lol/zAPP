@@ -1,6 +1,6 @@
 {
   "name": "zyronui",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "luaU script editor",
   "main": "core/main.js",
   "scripts": {
