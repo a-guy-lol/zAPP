@@ -368,8 +368,15 @@ function setupScriptSettingsModal() {
             console.error('Failed to load script settings:', error);
         }
         
-        const showSetKey = script.type === 'paid' || script.type === 'paid-key-system' || script.type === 'paid-free';
+        const showSetKey = Boolean(script.hasKeyOptions)
+            || script.type === 'paid'
+            || script.type === 'paid-key-system'
+            || script.type === 'paid-free';
         setKeySetting.style.display = showSetKey ? '' : 'none';
+        const keyTitle = setKeySetting.querySelector('h3');
+        if (keyTitle) {
+            keyTitle.textContent = showSetKey ? 'Custom Key' : 'Key';
+        }
         const supportsExecuteOnJoin = script.supportsExecuteOnJoin !== false;
         executeOnJoinSetting.style.display = supportsExecuteOnJoin ? '' : 'none';
         executeOnJoinToggle.disabled = !supportsExecuteOnJoin;

@@ -136,10 +136,6 @@ function updateScriptbloxPagination() {
 function setScriptbloxLoading(isLoading) {
     scriptbloxIsLoading = Boolean(isLoading);
 
-    if (scriptbloxSearchInput) {
-        scriptbloxSearchInput.disabled = scriptbloxIsLoading;
-    }
-
     updateScriptbloxPagination();
 }
 
@@ -319,7 +315,6 @@ function createScriptbloxCard(script) {
     }
     executeButton.addEventListener('click', async () => {
         if (killSwitchEnabled) {
-            showNotification('Kill Switch is enabled. Execution is disabled.', 'error');
             return;
         }
         await withBusyButton(executeButton, 'Executing...', async () => {
@@ -716,7 +711,6 @@ function getTypeBadge(type) {
 
 window.executeHubScript = async function(scriptPath, scriptName, scriptType, scriptId = '') {
     if (killSwitchEnabled) {
-        showNotification('Kill Switch is enabled. Execution is disabled.', 'error');
         return;
     }
 

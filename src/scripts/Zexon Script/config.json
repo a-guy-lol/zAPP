@@ -1,7 +1,8 @@
 {
-    "type": "free",
+    "type": "paid-free",
     "name": "Zexon Script",
     "description": "Our lightweight script lets you: Fling players, use Shaders, and control Cyclone!",
     "author": "Zexon Development",
-    "supportsExecuteOnJoin": true
+    "supportsExecuteOnJoin": true,
+    "hasKeyOptions": true
 }

@@ -492,6 +492,211 @@ function addApiOverlay(cm) {
     });
 }
 
+function getEditorFindElements() {
+    return {
+        bar: editorFindBar,
+        input: editorFindInput,
+        count: editorFindCount,
+        prev: editorFindPrev,
+        next: editorFindNext,
+        close: editorFindClose
+    };
+}
+
+function getActiveEditorEntry() {
+    return editors[activeTabId] || null;
+}
+
+function getActiveEditorText() {
+    const entry = getActiveEditorEntry();
+    if (!entry) return '';
+    if (entry.cm && typeof entry.cm.getValue === 'function') {
+        return entry.cm.getValue();
+    }
+    if (entry.session && typeof entry.session.getValue === 'function') {
+        return entry.session.getValue();
+    }
+    return '';
+}
+
+function buildEditorFindMatches(text, query) {
+    const haystack = String(text || '');
+    const needle = String(query || '').trim();
+    if (!needle) return [];
+
+    const haystackLower = haystack.toLowerCase();
+    const needleLower = needle.toLowerCase();
+    const matches = [];
+    let startIndex = 0;
+
+    while (startIndex <= haystackLower.length) {
+        const foundIndex = haystackLower.indexOf(needleLower, startIndex);
+        if (foundIndex === -1) break;
+        matches.push({
+            from: foundIndex,
+            to: foundIndex + needle.length
+        });
+        startIndex = foundIndex + Math.max(needle.length, 1);
+    }
+
+    return matches;
+}
+
+function getEditorPositionForIndex(cm, index) {
+    const text = String(cm?.getValue?.() || '');
+    const safeIndex = Math.max(0, Math.min(text.length, index));
+    const before = text.slice(0, safeIndex).split('\n');
+    return {
+        line: before.length - 1,
+        ch: before[before.length - 1].length
+    };
+}
+
+function updateEditorFindCounter(query, matches, activeIndex) {
+    const { count } = getEditorFindElements();
+    if (!count) return;
+
+    if (!query || !matches.length) {
+        count.textContent = '0/0';
+        return;
+    }
+
+    const current = activeIndex >= 0 ? activeIndex + 1 : 1;
+    count.textContent = `${current}/${matches.length}`;
+}
+
+function selectEditorMatch(match, { focus = true } = {}) {
+    const entry = getActiveEditorEntry();
+    if (!entry || !match) return false;
+
+    if (entry.cm && typeof entry.cm.setSelection === 'function') {
+        const from = getEditorPositionForIndex(entry.cm, match.from);
+        const to = getEditorPositionForIndex(entry.cm, match.to);
+        entry.cm.setSelection(from, to);
+        if (typeof entry.cm.scrollIntoView === 'function') {
+            entry.cm.scrollIntoView({ from, to }, 80);
+        }
+        if (focus && typeof entry.cm.focus === 'function') {
+            entry.cm.focus();
+        }
+        return true;
+    }
+
+    const fallbackEditor = entry.fallbackEditor || null;
+    if (fallbackEditor && typeof fallbackEditor.setSelectionRange === 'function') {
+        fallbackEditor.setSelectionRange(match.from, match.to);
+        if (focus && typeof fallbackEditor.focus === 'function') {
+            fallbackEditor.focus();
+        }
+        return true;
+    }
+
+    return false;
+}
+
+function runEditorFindSearch(query, { direction = 1, updateInput = true } = {}) {
+    const normalizedQuery = String(query || '').trim();
+    const { input } = getEditorFindElements();
+    const matches = buildEditorFindMatches(getActiveEditorText(), normalizedQuery);
+
+    if (updateInput && input && input.value !== normalizedQuery) {
+        input.value = normalizedQuery;
+    }
+
+    if (!normalizedQuery || !matches.length) {
+        updateEditorFindCounter(normalizedQuery, matches, -1);
+        return false;
+    }
+
+    const activeIndex = direction < 0 ? matches.length - 1 : 0;
+    const selected = matches[activeIndex];
+    const didSelect = selectEditorMatch(selected, { focus: false });
+    updateEditorFindCounter(normalizedQuery, matches, activeIndex);
+    return didSelect;
+}
+
+function moveEditorFindSelection(direction) {
+    const query = String(editorFindInput?.value || '').trim();
+    if (!query) return false;
+    const matches = buildEditorFindMatches(getActiveEditorText(), query);
+    if (!matches.length) {
+        updateEditorFindCounter(query, matches, -1);
+        return false;
+    }
+
+    const currentSelection = getActiveEditorEntry()?.cm?.getSelection?.() || '';
+    const currentIndex = matches.findIndex((match) => {
+        const entry = getActiveEditorEntry();
+        if (!entry?.cm || typeof entry.cm.getSelection !== 'function') return false;
+        const from = getEditorPositionForIndex(entry.cm, match.from);
+        const to = getEditorPositionForIndex(entry.cm, match.to);
+        return currentSelection === entry.cm.getRange(from, to);
+    });
+
+    const nextIndex = currentIndex === -1
+        ? (direction < 0 ? matches.length - 1 : 0)
+        : (currentIndex + direction + matches.length) % matches.length;
+    const selected = matches[nextIndex];
+    const didSelect = selectEditorMatch(selected, { focus: false });
+    updateEditorFindCounter(query, matches, nextIndex);
+    return didSelect;
+}
+
+function showEditorFindBar(initialQuery = '') {
+    const { bar, input } = getEditorFindElements();
+    if (!bar || !input) return;
+
+    bar.classList.remove('hidden');
+    const nextQuery = String(initialQuery || input.value || '').trim();
+    input.value = nextQuery;
+    if (nextQuery) {
+        runEditorFindSearch(nextQuery, { direction: 1, updateInput: false });
+    } else {
+        updateEditorFindCounter('', [], -1);
+    }
+    input.focus();
+    input.select();
+}
+
+function hideEditorFindBar() {
+    const { bar } = getEditorFindElements();
+    if (bar) {
+        bar.classList.add('hidden');
+    }
+}
+
+function handleEditorFindShortcut(event) {
+    if (!event) return;
+
+    const key = String(event.key || '').toLowerCase();
+    const metaOrCtrl = Boolean(event.metaKey || event.ctrlKey);
+    if (!metaOrCtrl) return;
+
+    if (key === 'f') {
+        event.preventDefault();
+        event.stopPropagation();
+        showEditorFindBar(getActiveEditorEntry()?.cm?.getSelection?.() || '');
+        return;
+    }
+
+    if (key === 'g' && !event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!moveEditorFindSelection(1)) {
+            showEditorFindBar();
+        }
+        return;
+    }
+
+    if (key === 'g' && event.shiftKey) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!moveEditorFindSelection(-1)) {
+            showEditorFindBar();
+        }
+    }
+}
+
 function createEditorElement(id, content) {
     const editorContainer = document.createElement('div');
     editorContainer.id = `editor-${id}`;
@@ -504,6 +709,7 @@ function createEditorElement(id, content) {
         fallbackEditor.value = content || '';
         editorContainer.appendChild(fallbackEditor);
         applyPreferencesToFallbackEditor(fallbackEditor, editorPreferences);
+        fallbackEditor.addEventListener('keydown', handleEditorFindShortcut, true);
 
         const onFallbackInput = () => {
             const tab = TABS_DATA.find(t => t.id === id);
@@ -532,11 +738,13 @@ function createEditorElement(id, content) {
                 fallbackEditor.focus();
             },
             destroy() {
+                fallbackEditor.removeEventListener('keydown', handleEditorFindShortcut, true);
                 fallbackEditor.removeEventListener('input', onFallbackInput);
                 if (fallbackEditor.parentNode) {
                     fallbackEditor.parentNode.removeChild(fallbackEditor);
                 }
-            }
+            },
+            fallbackEditor
         };
         return;
     }
@@ -559,6 +767,32 @@ function createEditorElement(id, content) {
             completeSingle: false
         },
         extraKeys: {
+            'Ctrl-F'(cm) {
+                showEditorFindBar(cm.getSelection() || '');
+            },
+            'Cmd-F'(cm) {
+                showEditorFindBar(cm.getSelection() || '');
+            },
+            'Ctrl-G'() {
+                if (!moveEditorFindSelection(1)) {
+                    showEditorFindBar();
+                }
+            },
+            'Cmd-G'() {
+                if (!moveEditorFindSelection(1)) {
+                    showEditorFindBar();
+                }
+            },
+            'Shift-Ctrl-G'() {
+                if (!moveEditorFindSelection(-1)) {
+                    showEditorFindBar();
+                }
+            },
+            'Shift-Cmd-G'() {
+                if (!moveEditorFindSelection(-1)) {
+                    showEditorFindBar();
+                }
+            },
             Tab(cm) {
                 if (cm.state.completionActive && typeof cm.state.completionActive.pick === 'function') {
                     cm.state.completionActive.pick();
@@ -585,6 +819,10 @@ function createEditorElement(id, content) {
         }
     });
     applyPreferencesToCodeMirror(codeMirror, editorPreferences);
+    const codeMirrorWrapper = codeMirror.getWrapperElement();
+    if (codeMirrorWrapper) {
+        codeMirrorWrapper.addEventListener('keydown', handleEditorFindShortcut, true);
+    }
 
     addApiOverlay(codeMirror);
 
@@ -624,16 +862,78 @@ function createEditorElement(id, content) {
         destroy() {
             codeMirror.off('change', onCodeMirrorChange);
             codeMirror.off('inputRead', onCodeMirrorInputRead);
+            if (codeMirrorWrapper) {
+                codeMirrorWrapper.removeEventListener('keydown', handleEditorFindShortcut, true);
+            }
             const wrapper = codeMirror.getWrapperElement();
             if (wrapper && wrapper.parentNode) {
                 wrapper.parentNode.removeChild(wrapper);
             }
-        }
+        },
+        cm: codeMirror
     };
 }
+
+function initializeEditorFindControls() {
+    if (!editorFindInput || editorFindInput.dataset.bound === 'true') return;
+
+    editorFindInput.dataset.bound = 'true';
+
+    editorFindInput.addEventListener('input', () => {
+        runEditorFindSearch(editorFindInput.value, { direction: 1, updateInput: false });
+    });
+
+    editorFindInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            hideEditorFindBar();
+            const entry = getActiveEditorEntry();
+            if (entry?.cm && typeof entry.cm.focus === 'function') {
+                entry.cm.focus();
+            } else if (entry?.fallbackEditor && typeof entry.fallbackEditor.focus === 'function') {
+                entry.fallbackEditor.focus();
+            }
+            return;
+        }
+
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            if (event.shiftKey) {
+                moveEditorFindSelection(-1);
+            } else {
+                moveEditorFindSelection(1);
+            }
+        }
+    });
+
+    if (editorFindPrev) {
+        editorFindPrev.addEventListener('click', () => {
+            moveEditorFindSelection(-1);
+        });
+    }
+
+    if (editorFindNext) {
+        editorFindNext.addEventListener('click', () => {
+            moveEditorFindSelection(1);
+        });
+    }
+
+    if (editorFindClose) {
+        editorFindClose.addEventListener('click', () => {
+            hideEditorFindBar();
+            const entry = getActiveEditorEntry();
+            if (entry?.cm && typeof entry.cm.focus === 'function') {
+                entry.cm.focus();
+            } else if (entry?.fallbackEditor && typeof entry.fallbackEditor.focus === 'function') {
+                entry.fallbackEditor.focus();
+            }
+        });
+    }
+}
+
+initializeEditorFindControls();
 async function executeScript() {
     if (killSwitchEnabled) {
-        showNotification('Kill Switch is enabled. Execution is disabled.', 'error');
         executeBtn.disabled = true;
         return;
     }

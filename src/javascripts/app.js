@@ -181,7 +181,7 @@ async function initApp() {
     if (killSwitchBtn) {
         killSwitchBtn.addEventListener('click', async () => {
             if (killSwitchTransitionInFlight) return;
-            await setKillSwitchState(!killSwitchEnabled, { persist: true, notify: true });
+            await setKillSwitchState(!killSwitchEnabled, { persist: true, notify: false });
         });
     }
     renameUserBtn.addEventListener('click', handleRenameUser);
@@ -1243,12 +1243,6 @@ async function setKillSwitchState(nextValue, { persist = true, notify = true } =
 
         await checkConnection();
 
-        if (notify) {
-            showNotification(
-                enabled ? 'Kill Switch enabled.' : 'Kill Switch disabled.',
-                enabled ? 'error' : 'info'
-            );
-        }
     } finally {
         killSwitchTransitionInFlight = false;
         if (killSwitchBtn) {

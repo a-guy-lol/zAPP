@@ -11,6 +11,13 @@ const SCRIPTBLOX_BASE_URL = 'https://scriptblox.com';
 const SCRIPTBLOX_TIMEOUT_MS = 10000;
 const SCRIPTBLOX_MAX_LIMIT = 20;
 
+function toLuaStringLiteral(value) {
+    return `"${String(value ?? '')
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\r\n|\r|\n/g, '\\n')}"`;
+}
+
 function sanitizeScriptId(rawId) {
     if (typeof rawId !== 'string') return null;
     const normalized = rawId
@@ -50,7 +57,8 @@ function discoverScripts() {
             thumbnail: null,
             type: 'free',
             author: '',
-            supportsExecuteOnJoin: true
+            supportsExecuteOnJoin: true,
+            hasKeyOptions: false
         };
 
         const configPath = path.join(scriptPath, 'config.json');
@@ -60,6 +68,7 @@ function discoverScripts() {
                 script.type = configData.type || 'free';
                 script.author = configData.author || '';
                 script.supportsExecuteOnJoin = configData.supportsExecuteOnJoin !== false;
+                script.hasKeyOptions = Boolean(configData.hasKeyOptions) || script.type === 'paid-free';
                 if (configData.name) script.name = configData.name;
                 if (configData.description) script.description = configData.description;
                 script.id = sanitizeScriptId(configData.scriptId || configData.id) || script.id;
@@ -104,17 +113,33 @@ function buildHubScriptContent(scriptPath, savedKey = null) {
 
     if (scriptFolderName === 'Sensation') {
         if (key) {
-            return `script_key="${key}";
+            return `script_key=${toLuaStringLiteral(key)};
 loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/730854e5b6499ee91deb1080e8e12ae3.lua"))()`;
         }
         return 'loadstring(game:HttpGet("https://api.luarmor.net/files/v4/loaders/730854e5b6499ee91deb1080e8e12ae3.lua"))()';
+    }
+
+    if (scriptFolderName === 'Zexon Script') {
+        if (key) {
+            return `getgenv().zxnkey = ${toLuaStringLiteral(key)}
+loadstring(game:HttpGet("https://zexon.fun/"))()`;
+        }
+        return 'loadstring(game:HttpGet("https://zexon.fun/"))()';
+    }
+
+    if (scriptFolderName === 'ButterHub') {
+        if (!key) {
+            throw new Error('ButterHub requires a key. Please add one in Script Settings.');
+        }
+        return `getgenv().LDKey = ${toLuaStringLiteral(key)}
+loadstring(game:HttpGet("https://raw.githubusercontent.com/kode-sec/Butter/refs/heads/main/main.lua"))()`;
     }
 
     const scriptContent = fs.readFileSync(luaFile, 'utf-8');
     if (!key) {
         return scriptContent;
     }
-    return `script_key="${key}";\n${scriptContent}`;
+    return `script_key=${toLuaStringLiteral(key)};\n${scriptContent}`;
 }
 
 function getScriptSettings(settingsMap, script) {
@@ -150,7 +175,7 @@ async function fetchScriptBloxJson(pathname, queryParams = null) {
             method: 'GET',
             headers: {
                 accept: 'application/json',
-                'user-agent': 'Zyron/1.5.2'
+                'user-agent': 'Zyron/1.5.4'
             }
         }),
         SCRIPTBLOX_TIMEOUT_MS,

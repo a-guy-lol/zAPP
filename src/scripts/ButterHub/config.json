@@ -1,0 +1,8 @@
+{
+    "type": "paid",
+    "name": "ButterHub",
+    "description": "A premium ButterHub loader with key support.",
+    "author": "kode-sec",
+    "supportsExecuteOnJoin": true,
+    "hasKeyOptions": true
+}

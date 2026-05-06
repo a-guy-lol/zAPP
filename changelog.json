@@ -1,12 +1,14 @@
 {
-  "latestVersion": "1.5.3",
+  "latestVersion": "1.5.4",
   "changelogs": [
 
 {
-  "version": "1.5.3",
+  "version": "1.5.4",
   "date": "2026-04-02",
   "changes": [
-    "Updated/Fixed Zexon Script loadstring"
+    "Updated Zexon Script loadstring and changed it to Free/Paid since its somewhat paid",
+    "Added ButterHub Script as Paid into Scripts tab!",
+    "Code editor now has Find inside of the scripts so you can use CRTL/COMMAND + F"
   ]
 },
 

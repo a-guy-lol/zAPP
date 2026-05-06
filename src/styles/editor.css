@@ -123,6 +123,61 @@
     border-color: var(--accent-color);
 }
 
+.editor-find-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(12, 12, 12, 0.78);
+    flex-shrink: 0;
+}
+
+.editor-find-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+}
+
+.editor-find-input:focus {
+    outline: none;
+    border-color: rgba(255, 255, 255, 0.24);
+}
+
+.editor-find-count {
+    color: var(--text-muted);
+    font-size: 12px;
+    min-width: 48px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.editor-find-btn {
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-main);
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.editor-find-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.editor-find-close {
+    margin-left: 0.1rem;
+}
+
 .tab-name-input {
     border: 1px solid rgba(255, 255, 255, 0.34);
     background: rgba(0, 0, 0, 0.44);
