@@ -1,6 +1,15 @@
 {
-  "latestVersion": "1.5.4",
+  "latestVersion": "1.5.5",
   "changelogs": [
+
+{
+  "version": "1.5.5",
+  "date": "2026-05-29",
+  "changes": [
+    "Refreshed the app icon",
+    "Bumped the app build to v1.5.5"
+  ]
+},
 
 {
   "version": "1.5.4",

@@ -175,7 +175,7 @@ async function fetchScriptBloxJson(pathname, queryParams = null) {
             method: 'GET',
             headers: {
                 accept: 'application/json',
-                'user-agent': 'Zyron/1.5.4'
+                'user-agent': 'Zyron/1.5.5'
             }
         }),
         SCRIPTBLOX_TIMEOUT_MS,
