@@ -6,8 +6,10 @@
   "version": "1.5.5",
   "date": "2026-05-29",
   "changes": [
-    "Refreshed the app icon",
-    "Bumped the app build to v1.5.5"
+    "Updated app logo to new Zexon logo",
+    "Tweaked executor dropdown and kill switch a bit",
+    "New attach button for manual execution (can be disabled in settings)",
+    "Aligned bottom bar control heights"
   ]
 },
 
