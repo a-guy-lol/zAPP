@@ -8,8 +8,7 @@
   "changes": [
     "Updated app logo to new Zexon logo",
     "Tweaked executor dropdown and kill switch a bit",
-    "New attach button for manual execution (can be disabled in settings)",
-    "Aligned bottom bar control heights"
+    "New attach button for manual execution (can be disabled in settings)"
   ]
 },
 
