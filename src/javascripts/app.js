@@ -151,7 +151,12 @@ async function initApp() {
         console.error('Failed to read selected executor from backend:', error);
     }
     killSwitchEnabled = window.safeStorage.getItem('zyronKillSwitch') === 'true';
+    attachmentProcessEnabled = window.safeStorage.getItem('zyronAttachmentProcess') !== 'false';
+    if (attachmentProcessToggle) {
+        attachmentProcessToggle.checked = attachmentProcessEnabled;
+    }
     updateKillSwitchUI();
+    updateAttachmentUI(false);
     await setSelectedExecutor(initialExecutor, { persist: false, notify: false });
 
     renderOnboardingAvatarChoices();
@@ -178,6 +183,9 @@ async function initApp() {
     newTabBtn.addEventListener('click', createNewTab);
     autoexecuteManagerBtn.addEventListener('click', openAutoexecuteModal);
     executeBtn.addEventListener('click', executeScript);
+    if (attachBtn) {
+        attachBtn.addEventListener('click', handleAttachButtonClick);
+    }
     if (killSwitchBtn) {
         killSwitchBtn.addEventListener('click', async () => {
             if (killSwitchTransitionInFlight) return;
@@ -268,6 +276,9 @@ async function initApp() {
     effectsToggle.addEventListener('change', toggleEffects);
     saveIndicatorToggle.addEventListener('change', toggleSaveIndicator);
     notificationsToggle.addEventListener('change', toggleNotifications);
+    if (attachmentProcessToggle) {
+        attachmentProcessToggle.addEventListener('change', toggleAttachmentProcess);
+    }
     rbxConsoleLoggingToggle.addEventListener('change', toggleRobloxConsoleLogging);
     discordRpcToggle.addEventListener('change', toggleDiscordRpc);
 
@@ -295,8 +306,6 @@ async function initApp() {
 
     initializeSettingsTabs();
     setupExecutorSelector();
-    setupExecutorInstallMenu();
-    await refreshExecutorInstallStatus({ silent: true });
     initializeWorkspacePanel();
     setupSidePanel();
 
@@ -392,6 +401,136 @@ function updateConsoleSidePanelInfo() {
     if (consoleSideExecutor) {
         consoleSideExecutor.textContent = getExecutorLabel();
     }
+}
+
+function canExecuteScripts() {
+    if (killSwitchEnabled) return false;
+    return attachmentProcessEnabled ? isAttached : true;
+}
+
+function setScriptExecuteButtonsEnabled() {
+    const executable = canExecuteScripts();
+    document.querySelectorAll('.script-execute-btn').forEach((button) => {
+        if (!(button instanceof HTMLButtonElement)) return;
+        button.disabled = !executable;
+        if (killSwitchEnabled) {
+            button.title = 'Kill Switch is enabled';
+        } else if (attachmentProcessEnabled && !isAttached) {
+            button.title = 'Attach before executing scripts';
+        } else if (
+            button.title === 'Kill Switch is enabled'
+            || button.title === 'Attach before executing scripts'
+        ) {
+            button.removeAttribute('title');
+        }
+    });
+}
+
+function updateAttachmentUI(isExecutorConnected = false) {
+    const manualAttachment = Boolean(attachmentProcessEnabled);
+    const attached = manualAttachment ? Boolean(isAttached && isExecutorConnected) : Boolean(isExecutorConnected);
+
+    if (attachBtn) {
+        attachBtn.classList.toggle('hidden', !manualAttachment);
+        attachBtn.classList.toggle('attached', manualAttachment && attached);
+        attachBtn.classList.toggle('attaching', isAttaching);
+        attachBtn.disabled = isAttaching || killSwitchEnabled;
+        attachBtn.setAttribute('aria-pressed', attached ? 'true' : 'false');
+        const label = attachBtn.querySelector('span');
+        if (label) {
+            label.textContent = isAttaching ? 'Attaching' : (attached ? 'Detach' : 'Attach');
+        }
+        attachBtn.title = isAttaching
+            ? 'Attaching to executor'
+            : (attached ? 'Detach from executor' : 'Attach to executor');
+    }
+
+    if (executeBtn) {
+        executeBtn.classList.toggle('hidden', manualAttachment && !attached);
+        executeBtn.disabled = killSwitchEnabled || !attached;
+    }
+
+    document.body.classList.toggle('attachment-required', manualAttachment);
+    document.body.classList.toggle('executor-attached', attached);
+    setScriptExecuteButtonsEnabled();
+}
+
+function setExecutorStatusPending() {
+    if (!executorStatusIndicator) return;
+    executorStatusIndicator.classList.remove('connected', 'disconnected', 'disabled');
+    executorStatusIndicator.classList.add('pending');
+}
+
+function setAttachedConnectionStatus() {
+    if (robloxStatusIndicator && robloxStatusText) {
+        robloxStatusIndicator.classList.remove('disconnected', 'disabled');
+        robloxStatusIndicator.classList.add('connected');
+        robloxStatusText.textContent = 'Connected';
+    }
+
+    if (executorStatusIndicator) {
+        executorStatusIndicator.classList.remove('disconnected', 'disabled', 'pending');
+        executorStatusIndicator.classList.add('connected');
+    }
+}
+
+function detachFromExecutor() {
+    if (!isAttached && !isAttaching) {
+        updateAttachmentUI(false);
+        return;
+    }
+    isAttached = false;
+    isAttaching = false;
+    updateAttachmentUI(false);
+}
+
+async function checkConnectionForAttach() {
+    try {
+        return Boolean(await checkConnection());
+    } catch (error) {
+        console.error('Attach connection check failed:', error);
+        return false;
+    }
+}
+
+async function attachToExecutor() {
+    if (isAttaching || killSwitchEnabled) return;
+
+    isAttaching = true;
+    isAttached = false;
+    updateAttachmentUI(false);
+    setExecutorStatusPending();
+
+    const startedAt = Date.now();
+    let connected = false;
+    while (Date.now() - startedAt < 5000) {
+        connected = await checkConnectionForAttach();
+        if (connected) break;
+        await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+
+    isAttaching = false;
+    isAttached = connected;
+    updateAttachmentUI(connected);
+
+    if (!connected) {
+        showNotification('Attach failed. Roblox may not be open or the executor may not be installed.', 'error');
+    } else {
+        setAttachedConnectionStatus();
+    }
+}
+
+async function handleAttachButtonClick() {
+    if (isAttaching || killSwitchEnabled) {
+        updateAttachmentUI(false);
+        return;
+    }
+    if (isAttached) {
+        detachFromExecutor();
+        await checkConnection();
+        return;
+    }
+    await attachToExecutor();
 }
 
 function updateSettingsSidePanelInfo() {
@@ -644,6 +783,7 @@ async function setSelectedExecutor(executor, { persist = true, notify = false } 
     selectedExecutor = normalizedExecutor;
     updateExecutorSelectorUI();
     updateExecutorInstallButtonUI();
+    detachFromExecutor();
 
     try {
         await window.electronAPI.setSelectedExecutor(normalizedExecutor);
@@ -1200,15 +1340,8 @@ function updateKillSwitchUI() {
     }
 
     document.body.classList.toggle('kill-switch-on', killSwitchEnabled);
-    document.querySelectorAll('.script-execute-btn').forEach((button) => {
-        if (!(button instanceof HTMLButtonElement)) return;
-        button.disabled = killSwitchEnabled;
-        if (killSwitchEnabled) {
-            button.title = 'Kill Switch is enabled';
-        } else if (button.title === 'Kill Switch is enabled') {
-            button.removeAttribute('title');
-        }
-    });
+    updateAttachmentUI(false);
+    setScriptExecuteButtonsEnabled();
 }
 
 async function setKillSwitchState(nextValue, { persist = true, notify = true } = {}) {
@@ -1227,6 +1360,9 @@ async function setKillSwitchState(nextValue, { persist = true, notify = true } =
         killSwitchBtn.disabled = true;
     }
     killSwitchEnabled = enabled;
+    if (enabled) {
+        detachFromExecutor();
+    }
     updateKillSwitchUI();
 
     try {

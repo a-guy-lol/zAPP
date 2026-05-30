@@ -187,6 +187,25 @@ function toggleNotifications() {
     );
 }
 
+function toggleAttachmentProcess() {
+    attachmentProcessEnabled = attachmentProcessToggle.checked;
+    window.safeStorage.setItem('zyronAttachmentProcess', attachmentProcessEnabled);
+
+    if (attachmentProcessEnabled) {
+        if (typeof detachFromExecutor === 'function') {
+            detachFromExecutor();
+        }
+        showNotification('Attachment process enabled.', 'info');
+    } else {
+        isAttached = false;
+        showNotification('Automatic executor connection enabled.', 'info');
+    }
+
+    if (typeof checkConnection === 'function') {
+        checkConnection();
+    }
+}
+
 async function toggleRobloxConsoleLogging() {
     const enabled = rbxConsoleLoggingToggle.checked;
     window.safeStorage.setItem('zyronRbxConsoleLogging', enabled);
@@ -252,6 +271,7 @@ async function confirmClearData() {
             window.safeStorage.removeItem('zyronEditorLineWrap');
             window.safeStorage.removeItem('zyronEditorAutocomplete');
             window.safeStorage.removeItem('zyronKillSwitch');
+            window.safeStorage.removeItem('zyronAttachmentProcess');
             if (typeof window.safeStorageFlush === 'function') {
                 await window.safeStorageFlush();
             }

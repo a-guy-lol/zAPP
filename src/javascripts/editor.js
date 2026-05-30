@@ -937,6 +937,10 @@ async function executeScript() {
         executeBtn.disabled = true;
         return;
     }
+    if (typeof canExecuteScripts === 'function' && !canExecuteScripts()) {
+        showNotification('Attach before executing scripts.', 'error');
+        return;
+    }
 
     const scriptContent = editors[activeTabId]?.session.getValue();
     if (!scriptContent) return;

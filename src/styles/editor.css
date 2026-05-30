@@ -393,6 +393,18 @@ li.CodeMirror-hint-active {
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.22);
 }
 
+.kill-switch-btn {
+    height: 40px;
+    min-width: 132px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    border-color: rgba(255, 255, 255, 0.36);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.33);
+}
+
 .kill-switch-btn:hover:not(:disabled),
 .executor-install-btn:hover {
     border-color: rgba(207, 218, 232, 0.44);
@@ -400,10 +412,23 @@ li.CodeMirror-hint-active {
     transform: translateY(-1px);
 }
 
+.kill-switch-btn:hover:not(:disabled) {
+    border-color: rgba(255, 255, 255, 0.52);
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+}
+
 .kill-switch-btn.active {
-    border-color: rgba(186, 92, 92, 0.62);
-    background: rgba(92, 35, 35, 0.46);
-    color: #efd8d8;
+    border-color: rgba(239, 68, 68, 0.72);
+    background: rgba(127, 29, 29, 0.56);
+    color: #fee2e2;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.18), 0 8px 18px rgba(127, 29, 29, 0.36);
+}
+
+.kill-switch-btn.active:hover:not(:disabled) {
+    border-color: rgba(248, 113, 113, 0.88);
+    background: rgba(153, 27, 27, 0.68);
+    color: #fff1f2;
 }
 
 .kill-switch-btn:disabled {
@@ -412,11 +437,58 @@ li.CodeMirror-hint-active {
     transform: none;
 }
 
-.kill-switch-icon {
-    width: 14px;
-    height: 14px;
+.attach-btn:disabled {
+    opacity: 0.56;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.kill-switch-toggle {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+    transition: background-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kill-switch-toggle::after {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: rgba(243, 244, 246, 0.9);
+    transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.kill-switch-btn.active .kill-switch-toggle {
+    background: rgba(239, 68, 68, 0.72);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.kill-switch-btn.active .kill-switch-toggle::after {
+    transform: translateX(16px);
+    background: #ffffff;
+}
+
+.attach-btn-icon {
+    width: 15px;
+    height: 15px;
     object-fit: contain;
-    opacity: 0.88;
+    opacity: 0.9;
+}
+
+.attach-btn.attaching .attach-btn-icon {
+    animation: attach-spin 0.72s linear infinite;
+}
+
+@keyframes attach-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .executor-install-control {
@@ -598,10 +670,18 @@ li.CodeMirror-hint-active {
     background: rgba(143, 44, 44, 0.5);
 }
 
-#execute-btn {
+#execute-btn,
+.attach-btn {
     background: rgba(255, 255, 255, 0.1);
     color: #f3f4f6;
     border: 1px solid rgba(255, 255, 255, 0.36);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 40px;
+    min-width: 116px;
     padding: 10px 22px;
     font-size: 14px;
     font-weight: 700;
@@ -611,17 +691,20 @@ li.CodeMirror-hint-active {
     transition: transform 0.15s ease, box-shadow 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.33);
 }
-#execute-btn:hover:not(:disabled) {
+#execute-btn:hover:not(:disabled),
+.attach-btn:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.18);
     border-color: rgba(255, 255, 255, 0.52);
     transform: translateY(-1px);
     box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
 }
-#execute-btn:active:not(:disabled) {
+#execute-btn:active:not(:disabled),
+.attach-btn:active:not(:disabled) {
     transform: translateY(0);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.34);
 }
-#execute-btn:disabled {
+#execute-btn:disabled,
+.attach-btn:disabled {
     background: rgba(148, 163, 184, 0.2);
     color: rgba(229, 231, 235, 0.56);
     border-color: rgba(148, 163, 184, 0.28);

@@ -309,12 +309,18 @@ function createScriptbloxCard(script) {
     executeButton.type = 'button';
     executeButton.className = 'script-execute-btn';
     executeButton.textContent = 'Execute';
-    executeButton.disabled = Boolean(killSwitchEnabled);
+    executeButton.disabled = typeof canExecuteScripts === 'function' ? !canExecuteScripts() : Boolean(killSwitchEnabled);
     if (killSwitchEnabled) {
         executeButton.title = 'Kill Switch is enabled';
+    } else if (attachmentProcessEnabled && !isAttached) {
+        executeButton.title = 'Attach before executing scripts';
     }
     executeButton.addEventListener('click', async () => {
         if (killSwitchEnabled) {
+            return;
+        }
+        if (typeof canExecuteScripts === 'function' && !canExecuteScripts()) {
+            showNotification('Attach before executing scripts.', 'error');
             return;
         }
         await withBusyButton(executeButton, 'Executing...', async () => {
@@ -691,7 +697,7 @@ function createScriptCard(script) {
         <div class="script-info">
             <h3 class="script-title">${script.name}</h3>
             <p class="script-description">${script.description || 'No description available.'}</p>
-            <button class="script-execute-btn" ${killSwitchEnabled ? 'disabled title="Kill Switch is enabled"' : ''} onclick="executeHubScript('${script.path}', '${script.name}', '${script.type}', '${script.id || ''}')">Execute</button>
+            <button class="script-execute-btn" ${typeof canExecuteScripts === 'function' && !canExecuteScripts() ? `disabled title="${killSwitchEnabled ? 'Kill Switch is enabled' : 'Attach before executing scripts'}"` : ''} onclick="executeHubScript('${script.path}', '${script.name}', '${script.type}', '${script.id || ''}')">Execute</button>
         </div>
     `;
 
@@ -711,6 +717,10 @@ function getTypeBadge(type) {
 
 window.executeHubScript = async function(scriptPath, scriptName, scriptType, scriptId = '') {
     if (killSwitchEnabled) {
+        return;
+    }
+    if (typeof canExecuteScripts === 'function' && !canExecuteScripts()) {
+        showNotification('Attach before executing scripts.', 'error');
         return;
     }
 

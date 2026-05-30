@@ -1,8 +1,4 @@
 async function checkConnection() {
-    if (typeof window.refreshExecutorInstallStatus === 'function') {
-        window.refreshExecutorInstallStatus({ silent: true });
-    }
-
     if (killSwitchEnabled) {
         if (robloxStatusIndicator && robloxStatusText) {
             robloxStatusIndicator.classList.remove('connected', 'disconnected');
@@ -15,7 +11,11 @@ async function checkConnection() {
             executorStatusIndicator.classList.add('disabled');
         }
 
-        executeBtn.disabled = true;
+        if (typeof updateAttachmentUI === 'function') {
+            updateAttachmentUI(false);
+        } else {
+            executeBtn.disabled = true;
+        }
         return false;
     }
 
@@ -30,9 +30,14 @@ async function checkConnection() {
     if (typeof updateExecutorSelectorUI === 'function') {
         updateExecutorSelectorUI(isRobloxConnected ? resolvedExecutorValue : null);
     }
+
+    if (attachmentProcessEnabled && isAttached && !isRobloxConnected) {
+        isAttached = false;
+    }
     
     if (robloxStatusIndicator && robloxStatusText) {
-        if (isRobloxConnected) {
+        const shouldShowAttached = attachmentProcessEnabled ? isAttached && isRobloxConnected : isRobloxConnected;
+        if (shouldShowAttached) {
             robloxStatusIndicator.classList.remove('disconnected', 'disabled');
             robloxStatusIndicator.classList.add('connected');
             robloxStatusText.textContent = 'Connected';
@@ -43,10 +48,22 @@ async function checkConnection() {
         }
     }
 
-    executorStatusIndicator.classList.remove('connected', 'disconnected', 'disabled', 'pending');
-    executorStatusIndicator.classList.add(isRobloxConnected ? 'connected' : 'disconnected');
+    if (executorStatusIndicator) {
+        executorStatusIndicator.classList.remove('connected', 'disconnected', 'disabled', 'pending');
+        if (isAttaching) {
+            executorStatusIndicator.classList.add('pending');
+        } else {
+            executorStatusIndicator.classList.add((attachmentProcessEnabled ? isAttached && isRobloxConnected : isRobloxConnected) ? 'connected' : 'disconnected');
+        }
+    }
 
-    executeBtn.disabled = !isRobloxConnected;
+    if (typeof updateAttachmentUI === 'function') {
+        updateAttachmentUI(isRobloxConnected);
+    } else {
+        executeBtn.disabled = !isRobloxConnected;
+    }
+
+    return isRobloxConnected;
 }
 
 async function loadChangelog() {
